@@ -11,15 +11,18 @@
     #banner {
       height: 360px;
       width: 100%;
+      margin-bottom:16px;
     }
   </style>
 </head>
 
 <body>
+  {%include "nav.html" %}
+  <img class="img-fluid" id="banner" src="http://192.168.1.10:5000/static/erasmus%20flag.png">
   <div class="container">
     <h1 class="text-center mt-2 mb-4">Erasmus-Talk</h1>
-    <img class="img-fluid" id="banner" src="http://192.168.1.10:5000/static/erasmus%20flag.png">
-    <h2 class="text-center mt-2 mb-4">About Erasmus Talk project</h2>
+    <div class="row" style="margin-bottom:16px">
+      <div class="col-md-6">
     <p class="lead">
       Welcome to Erasmus Talk, the ultimate platform for connecting Erasmus students! Our mission is to
       help students from around the world find their peers who are
@@ -34,6 +37,11 @@
       make your Erasmus journey smooth and enjoyable. Join us today
       and become a part of our vibrant Erasmus community!
     </p>
+  </div>
+  <div class="d-none d-md-block col-6">
+    <img src="/static/students.jpg" style="height:320px;border-radius: 4px;">
+  </div>
+  </div>
     <div>
       {%for student in students %}
         {%include "studentinfo.html" %}
@@ -42,9 +50,9 @@
     <div class="text-center">
       <button class="btn btn-primary btn-lg">Sign Up</button>
       <button class="btn btn-primary btn-lg">Login</button>
-      <p class="mt-4">Copyright 2024</p>
     </div>
   </div>
+  {%include "footer.html" %}
 </body>
 
 </html>
