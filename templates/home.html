@@ -1,43 +1,50 @@
 <!DOCTYPE html>
 <html>
-    <head>
-      <title>Erasmus Talk</title>
-      <meta charset="utf-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1">
-      <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" 
-      integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
-      <style>
-        #banner {
-          height:360px;
-          width:100%;
-        }
-      </style>
-    </head>
-    <body>
-      <div class="container" >
-      <h1 class="text-center mt-2 mb-4">Erasmus-Talk</h1>
-      <img class = "img-fluid" id ="banner" src ="http://192.168.1.10:5000/static/erasmus%20flag.png" 
-    >
-      <h2 class="text-center mt-2 mb-4">About Erasmus Talk project</h2>
-      <p class="lead">
-        Welcome to Erasmus Talk, the ultimate platform for connecting Erasmus students! Our mission is to 
-        help students from around the world find their peers who are 
-        heading to the same universities, cities, and countries. With 
-        Erasmus Talk, you can easily join communities based on your 
-        destination, chat with fellow students, and get valuable insights 
-        from those who have already experienced life at your chosen location. 
-        By registering with your LinkedIn account, you can create a profile,
-         select your destination and period of stay, and start exploring 
-         the wealth of information shared by others. From accommodation 
-         tips to local cuisine recommendations, Erasmus Talk is here to 
-         make your Erasmus journey smooth and enjoyable. Join us today 
-         and become a part of our vibrant Erasmus community!
-      </p>
-      <div class="text-center">
+
+<head>
+  <title>Erasmus Talk</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+  <style>
+    #banner {
+      height: 360px;
+      width: 100%;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1 class="text-center mt-2 mb-4">Erasmus-Talk</h1>
+    <img class="img-fluid" id="banner" src="http://192.168.1.10:5000/static/erasmus%20flag.png">
+    <h2 class="text-center mt-2 mb-4">About Erasmus Talk project</h2>
+    <p class="lead">
+      Welcome to Erasmus Talk, the ultimate platform for connecting Erasmus students! Our mission is to
+      help students from around the world find their peers who are
+      heading to the same universities, cities, and countries. With
+      Erasmus Talk, you can easily join communities based on your
+      destination, chat with fellow students, and get valuable insights
+      from those who have already experienced life at your chosen location.
+      By registering with your LinkedIn account, you can create a profile,
+      select your destination and period of stay, and start exploring
+      the wealth of information shared by others. From accommodation
+      tips to local cuisine recommendations, Erasmus Talk is here to
+      make your Erasmus journey smooth and enjoyable. Join us today
+      and become a part of our vibrant Erasmus community!
+    </p>
+    <div>
+      {%for student in students %}
+        {%include "studentinfo.html" %}
+      {% endfor %}
+    </div>
+    <div class="text-center">
       <button class="btn btn-primary btn-lg">Sign Up</button>
       <button class="btn btn-primary btn-lg">Login</button>
       <p class="mt-4">Copyright 2024</p>
-      </div>
     </div>
-    </body>
+  </div>
+</body>
+
 </html>

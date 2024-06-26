@@ -1,0 +1,18 @@
+<div class="border-bottom row" style="margin-bottom: 16px;
+padding-bottom: 8px;">
+    <div class="col-9">
+        <h4 style="color:rgb(120,120,120); margin-top: 4px;">{{student["name"]}}</h4>
+        <div>
+            <b>Student id:</b>{{student["id"]}}
+        </div>
+        {% if "department" in student %}
+        <div>
+            <b>Department:</b>{{student["department"]}}
+        </div>
+        {% endif %}
+    </div>
+    <div class="col-3">
+        <button type="button" class="btn btn-primary">Contact</button>
+    </div>
+
+</div>
