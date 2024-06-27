@@ -1,9 +1,12 @@
 <div class="border-bottom row" style="margin-bottom: 16px;
 padding-bottom: 8px;">
     <div class="col-9">
-        <h4 style="color:rgb(120,120,120); margin-top: 4px;">{{student["name"]}}</h4>
+        <h4 style="color:rgb(120,120,120); margin-top: 4px;">{{student["name"]}} {{student["surname"]}}</h4>
         <div>
             <b>Student id:</b>{{student["id"]}}
+        </div>
+        <div>
+            <b>Going to:</b>{{student["going_to"]}}
         </div>
         {% if "department" in student %}
         <div>

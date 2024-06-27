@@ -4,22 +4,25 @@ app = Flask(__name__)
 
 STUDENTS = [
     {
-        "id": 210201003,
+        "id": 1,
         "name": "Görkem",
         "surname": "Orhan",
-        "department":"Computer Engineering" 
+        "department":"Computer Engineering",
+        "going_to":"Bologna Universitty"
     },
     {
-        "id": 230204003,
-        "name": "X",
-        "surname": "Y",
-        "department":"Industrial Engineering" 
+        "id": 2,
+        "name": "John",
+        "surname": "Connor",
+        "department":"Industrial Engineering",
+        "going_to":"Frei Universitat"
     },
     {
-        "id": 220202005,
-        "name": "A",
-        "surname": "B",
-        "department":"Electrical-Electronics Engineer" 
+        "id": 3,
+        "name": "Marcus",
+        "surname": "Pietro",
+        "department":"Electrical-Electronics Engineer",
+        "going_to":"Antalya Bilim University"
     }
 ]
 
