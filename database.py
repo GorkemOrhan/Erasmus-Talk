@@ -23,3 +23,17 @@ def load_student_from_db(id):
         else:
             return dict(row._mapping)
         
+def add_student_to_db(data):
+    with engine.connect() as conn:
+    
+        query =text("INSERT INTO students (name,surname,department,email,going_to) VALUES\
+                    (:name, :surname, :department, :email, :going_to)")
+        conn.execute(query,{
+                     "name":data['name'],
+                     "surname":data['surname'],
+                     "email":data['email'],
+                     "going_to":data['going_to'],
+                     "department":data['department'],
+                     })
+        conn.commit()
+        

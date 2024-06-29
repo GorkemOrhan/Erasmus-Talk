@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Signed Up</title>
+    {% include 'bootstrap.html' %}
+</head>
+
+<body>
+    {%include "nav.html" %}
+    {%include "banner.html" %}
+    <div class="container">
+        <h1 class="text-center mt-2 mb-4">Erasmus-Talk</h1>
+
+        <p>You have signed up!</p>
+
+        <b>Name</b>
+        <div class="mb-2">{{signedin['name']}}</div>
+
+        <b>Surname</b>
+        <div class="mb-2">{{signedin['surname']}}</div>
+
+        <b>Email</b>
+        <div class="mb-2">{{signedin['email']}}</div>
+
+        <b>Going To</b>
+        <div class="mb-2">{{signedin['going_to']}}</div>
+
+        <b>Department</b>
+        <div class="mb-2">{{signedin['department']}}</div>
+    </div>
+    {%include "footer.html" %}
+</body>
+
+</html>
