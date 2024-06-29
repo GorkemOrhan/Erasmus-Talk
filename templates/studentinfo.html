@@ -3,9 +3,6 @@ padding-bottom: 8px;">
     <div class="col-9">
         <h4 style="color:rgb(120,120,120); margin-top: 4px;">{{student["name"]}} {{student["surname"]}}</h4>
         <div>
-            <b>Student id:</b>{{student["id"]}}
-        </div>
-        <div>
             <b>Going to:</b>{{student["going_to"]}}
         </div>
         {% if "department" in student %}
@@ -16,6 +13,7 @@ padding-bottom: 8px;">
     </div>
     <div class="col-3 padding-right:16px">
         <a href="mailto:{{student['name']}}@erasmustalk.com" type="button" class="btn btn-primary">Contact</a>
+        <a href ="/student/{{student['id']}}" type="button" class="btn btn-primary">Profile</a>
     </div>
 
 </div>
