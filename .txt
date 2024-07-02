@@ -1,0 +1,1 @@
+https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=7731dqhcky4vxl&redirect_uri=https%3A//www.linkedin.com/developers/tools/oauth/redirect&scope=r_liteprofile r_emailaddress
