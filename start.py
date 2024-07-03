@@ -34,6 +34,10 @@ def sign_up_page():
         return render_template("signedup.html", signedin=data)
     return render_template("signup_form.html")
 
+@app.route("/login")
+def login():
+    return render_template("login.html")
+
 ## LinkedIn Login Begin ##
 
 CLIENT_ID = "7731dqhcky4vxl"
@@ -41,7 +45,7 @@ CLIENT_SECRET = "mgrwygPvYHARgVki"
 REDIRECT_URI = "http://localhost:5000/callback"
 ACCESS_TOKEN = "AQXITqv6bCR8dndWD8A3qcyL7_H5ENRHZ6aVz84C1ZqQGYnHtz6cw8vHWl4X56D59BB89BDqUTWprXJ3PULQ9rNqEE1QlY70n30H8dQ_aqbH7PTayhsd6G9PStDP4wQJAhoWugOjnF51bahRC5NQUuHeo0tk4EozSGPmjdyOjTGRSNGplcj-b_MPRUiqYE2aRSNZ93VmvquhxOrXFQlT0wPYnl0ZfRqQ8ZYYqtaQNeVw2TGGU7Jtv2GBkglU5kwXsBSNu7skGdnY1-0L5ZJR4_-jLEnGm4kKPTAcqFeJTXwikPvrleMKrG6HbW5nnY8q3anRe440OEP-N3OKJdrapsaObEI_iQ"
 
-@app.route("/login")
+@app.route("/loginvialinkedin")
 def login_via_linkedin():
     linkedin_auth_url = (
         "https://www.linkedin.com/oauth/v2/authorization?"
@@ -92,7 +96,7 @@ def callback():
         return f"Error: Failed to get profile data, {profile_response.text}", 500
 
     profile_data = profile_response.json()
-    return profile_data
+    
 
     email_url = "https://api.linkedin.com/v2/emailAddress?q=members&projection=(elements*(handle~))"
     email_response = requests.get(email_url, headers=profile_headers)
