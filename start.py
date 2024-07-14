@@ -35,7 +35,7 @@ def sign_up_page():
         data = request.form.to_dict()
         add_student_to_db(data)
         return render_template("signedup.html", signedin=data)
-    return render_template("signup_form.html")
+    return render_template("account/signup.html")
 
 @app.route("/login")
 def login():
