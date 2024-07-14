@@ -1,5 +1,12 @@
 from sqlalchemy import create_engine,text
 import os
+from dotenv import load_dotenv
+
+env = os.getenv('FLASK_ENV', 'development')
+dotenv_path = f'.env.{env}'
+load_dotenv(dotenv_path)
+
+#print(os.environ["DB_CONNECTION_STR"])
 
 db_connection_string = os.environ["DB_CONNECTION_STR"]
 db_connection_string = db_connection_string.strip('"').strip("'")

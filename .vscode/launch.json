@@ -1,0 +1,22 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: Flask",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/start.py",  // Uygulamanızın başlangıç dosyasının yolu
+            "args": [
+                "run",
+                "--no-debugger",
+                "--no-reload"
+            ],
+            "jinja": true,
+            "justMyCode": true,
+            "env": {
+                "FLASK_APP": "start.py",
+                "FLASK_ENV": "development"
+            }
+        }
+    ]
+}
