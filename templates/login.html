@@ -2,34 +2,54 @@
 <html>
 
 <head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <meta name="description" content="">
-    <meta name="author" content="">
-
-    <title>ErasmusTalk-Login</title>
-    {%include "bootstrap.html"%}
+    <title>Sign Up - Erasmus Talk</title>
+    {% include 'account/account.base.html' %}
 </head>
 
 <body class="bg-primary">
-    <div class="container">
-        <!-- Outer Row -->
+    <div class="container sign-up">
         <div class="row justify-content-center">
             <div class="col-xl-10 col-lg-12 col-md-9">
                 <div class="card o-hidden border-0 shadow-lg my-5">
                     <div class="card-body p-0">
-                        <h1 class="text-center mt-2 mb-4">Welcome Back!</h1>
-                        <a href="/loginvialinkedin" type="button" class="btn btn-light btn-lg container">
-        <img src="/static/linkedin.png" alt="Sign Up via LinkedIn" style="height:32px;">
-      </a>
+                        <div class="row">
+                            <div class="col-lg-12">
+                                <div class="form" >
+                                    <div class="text-center">
+                                        <h1 class="h4 text-gray-900 mb-4">Welcome to ErasmusTalk!</h1>
+                                    </div>
+                                    <form>
+                                        <div class ="form-group">
+                                            <label class ="fw-bold" for="exampleInputEmail1" style="font-weight: bold !important;">First Name</label>
+                                            <input type="text" class="form-control" id="name" placeholder="Enter first name">   
+                                        </div>
+                                        <div class ="form-group">
+                                            <label class ="fw-bold" for="exampleInputEmail1" style="font-weight: bold !important;">Last Name</label>
+                                            <input type="text" class="form-control" id="name" placeholder="Enter last name">   
+                                        </div>
+                                        <div class="form-group">
+                                          <label class ="fw-bold" for="exampleInputEmail1" style="font-weight: bold !important;">Email address</label>
+                                          <input type="email" class="form-control" id="exampleInputEmail1" aria-describedby="emailHelp" placeholder="Enter email">
+                                          <small id="emailHelp" class="form-text text-muted">We'll never share your email with anyone else.</small>
+                                        </div>
+                                        <div class="form-group">
+                                          <label class ="fw-bold" for="exampleInputPassword1" style="font-weight: bold !important;">Password</label>
+                                          <input type="password" class="form-control" id="exampleInputPassword1" placeholder="Password">
+                                        </div>
+                                        <div class="form-check">
+                                          <input type="checkbox" class="form-check-input" id="exampleCheck1">
+                                          <label class="form-check-label" for="exampleCheck1">Terms and Conditions</label>
+                                        </div>
+                                        <button type="submit" class="btn btn-primary">Submit</button>
+                                      </form>
+                                    <hr>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-
     </div>
-
 </body>
-
 </html>
