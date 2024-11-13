@@ -39,7 +39,7 @@ def sign_up_page():
 
 @app.route("/login")
 def login():
-    return render_template("login.html")
+    return render_template("account/login.html")
 
 ## LinkedIn Login Begin ##
 
