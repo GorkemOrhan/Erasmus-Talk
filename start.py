@@ -33,13 +33,22 @@ def show_student(id):
 def sign_up_page():
     if request.method == "POST":
         data = request.form.to_dict()
-        add_student_to_db(data)
-        return render_template("signedup.html", signedin=data)
+        print("Form Data Received:", data)  # Debugging line
+        signedin = add_student_to_db(data)
+        return redirect(url_for('signed_up_page', signedin=signedin))
     return render_template("account/signup.html")
 
 @app.route("/login")
 def login():
     return render_template("account/login.html")
+
+@app.route("/signedup")
+def signed_up_page():
+    signedin = request.args.get('signedin')
+    if not signedin:
+        # Handle the case where signedin is not available
+        return "Error: No user data available", 400
+    return render_template("signedup.html", signedin=signedin)
 
 ## LinkedIn Login Begin ##
 
