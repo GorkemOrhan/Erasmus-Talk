@@ -43,6 +43,8 @@ def add_student_to_db(data):
                      "department":data['department'],
                      })
         conn.commit()
+        # Return the inserted student data
+        return data
         
 
         
