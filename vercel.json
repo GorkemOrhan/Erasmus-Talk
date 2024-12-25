@@ -1,0 +1,9 @@
+{
+    "builds": [
+      {
+        "src": "path/to/app.py",
+        "use": "@vercel/python"
+      }
+    ]
+  }
+  
