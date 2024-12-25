@@ -44,3 +44,5 @@ def add_student_to_db(data):
                      })
         conn.commit()
         
+
+        
