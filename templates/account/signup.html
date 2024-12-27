@@ -108,14 +108,26 @@
                             </div>
                         </div>
                         <div class="form-group">
-                            <label for="going_to" class="fw-bold">Going To</label>
-                            <input type="text" class="form-control" id="going_to" name="going_to" 
-                                   placeholder="Start typing university name..." required>
-                            <div class="invalid-feedback">
-                                Please select a valid university.
+                            <label class="fw-bold">Going To</label>
+                            <div class="row">
+                                <div class="col-md-6 mb-2 mb-md-0">
+                                    <input type="text" class="form-control" id="country_selector" name="country" 
+                                           placeholder="Select country..." required>
+                                    <div class="invalid-feedback">
+                                        Please select a country.
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <select class="form-select" id="going_to" name="going_to" required disabled>
+                                        <option value="">Select university...</option>
+                                    </select>
+                                    <div class="invalid-feedback">
+                                        Please select a university.
+                                    </div>
+                                </div>
                             </div>
                             <small class="form-text text-muted">
-                                Start typing to see matching universities
+                                First select a country, then choose a university
                             </small>
                         </div>
                         <div class="form-check mb-3">
@@ -157,37 +169,68 @@
                 })
         })()
 
-        // University Autocomplete
+        // Country and University Selection
         $(document).ready(function() {
-            $("#going_to").autocomplete({
+            // Store all universities data
+            let universitiesData = {};
+            
+            // Country Autocomplete
+            $("#country_selector").autocomplete({
                 source: function(request, response) {
                     $.ajax({
                         url: "http://universities.hipolabs.com/search",
                         dataType: "json",
                         data: {
-                            name: request.term
+                            name: ""  // Get all universities to extract countries
                         },
                         success: function(data) {
-                            response($.map(data, function(item) {
-                                return {
-                                    label: item.name + " (" + item.country + ")",
-                                    value: item.name
-                                };
-                            }));
+                            // Group universities by country
+                            data.forEach(uni => {
+                                if (!universitiesData[uni.country]) {
+                                    universitiesData[uni.country] = [];
+                                }
+                                if (!universitiesData[uni.country].includes(uni.name)) {
+                                    universitiesData[uni.country].push(uni.name);
+                                }
+                            });
+                            
+                            // Extract unique countries and filter based on input
+                            let countries = Object.keys(universitiesData);
+                            let matches = countries.filter(country => 
+                                country.toLowerCase().includes(request.term.toLowerCase())
+                            );
+                            response(matches);
                         }
                     });
                 },
-                minLength: 3,
-                delay: 500,
+                minLength: 1,
+                delay: 300,
                 select: function(event, ui) {
-                    $(this).val(ui.item.value);
+                    const selectedCountry = ui.item.value;
+                    $(this).val(selectedCountry);
+                    
+                    // Enable and populate university dropdown
+                    const $universitySelect = $("#going_to");
+                    $universitySelect.prop("disabled", false);
+                    $universitySelect.empty();
+                    $universitySelect.append('<option value="">Select university...</option>');
+                    
+                    // Sort universities alphabetically
+                    const universities = universitiesData[selectedCountry].sort();
+                    universities.forEach(uni => {
+                        $universitySelect.append(`<option value="${uni}">${uni}</option>`);
+                    });
+                    
                     return false;
                 }
-            }).autocomplete("instance")._renderItem = function(ul, item) {
-                return $("<li>")
-                    .append("<div>" + item.label + "</div>")
-                    .appendTo(ul);
-            };
+            });
+
+            // Clear university selection when country changes
+            $("#country_selector").on("change", function() {
+                const $universitySelect = $("#going_to");
+                $universitySelect.val("");
+                $universitySelect.prop("disabled", true);
+            });
         });
     </script>
 </body>

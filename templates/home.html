@@ -4,47 +4,189 @@
 <head>
   <title>Erasmus Talk</title>
   {% include 'bootstrap.html' %}
-  
+  <style>
+    /* Hero Section */
+    .hero {
+      background: linear-gradient(rgba(78, 115, 223, 0.9), rgba(78, 115, 223, 0.9)), url('/static/erasmus flag.png');
+      background-size: cover;
+      background-position: center;
+      color: white;
+      padding: 100px 0;
+      margin-bottom: 50px;
+    }
+
+    .hero h1 {
+      font-size: 3.5rem;
+      font-weight: 700;
+      margin-bottom: 20px;
+    }
+
+    .hero p {
+      font-size: 1.25rem;
+      margin-bottom: 30px;
+    }
+
+    /* Features Section */
+    .features {
+      padding: 80px 0;
+      background-color: #f8f9fc;
+    }
+
+    .feature-box {
+      text-align: center;
+      padding: 30px;
+      margin-bottom: 30px;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.1);
+      transition: transform 0.3s ease;
+    }
+
+    .feature-box:hover {
+      transform: translateY(-5px);
+    }
+
+    .feature-icon {
+      font-size: 2.5rem;
+      color: #4e73df;
+      margin-bottom: 20px;
+    }
+
+    /* Students Section */
+    .students-section {
+      padding: 80px 0;
+    }
+
+    .student-card {
+      background: white;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.1);
+      transition: transform 0.3s ease;
+    }
+
+    .student-card:hover {
+      transform: translateY(-5px);
+    }
+
+    /* CTA Section */
+    .cta-section {
+      background: linear-gradient(45deg, #4e73df, #224abe);
+      color: white;
+      padding: 80px 0;
+      margin-top: 50px;
+    }
+
+    .btn-hero {
+      padding: 12px 30px;
+      font-size: 1.1rem;
+      margin: 10px;
+      border-radius: 30px;
+    }
+
+    .btn-outline-light:hover {
+      background-color: #fff;
+      color: #4e73df;
+    }
+  </style>
 </head>
 
 <body>
   {%include "nav.html" %}
-  {%include "banner.html" %}
-  
-  <div class="container">
-    <h1 class="text-center mt-2 mb-4">Erasmus-Talk</h1>
-    <div class="row" style="margin-bottom:16px">
-      <div class="col-md-6">
-    <p class="lead">
-      Welcome to Erasmus Talk, the ultimate platform for connecting Erasmus students! Our mission is to
-      help students from around the world find their peers who are
-      heading to the same universities, cities, and countries. With
-      Erasmus Talk, you can easily join communities based on your
-      destination, chat with fellow students, and get valuable insights
-      from those who have already experienced life at your chosen location.
-      By registering with your LinkedIn account, you can create a profile,
-      select your destination and period of stay, and start exploring
-      the wealth of information shared by others. From accommodation
-      tips to local cuisine recommendations, Erasmus Talk is here to
-      make your Erasmus journey smooth and enjoyable. Join us today
-      and become a part of our vibrant Erasmus community!
-    </p>
-  </div>
-  <div class="d-none d-md-block col-6">
-    <img src="/static/students.jpg" style="height:320px;border-radius: 4px;">
-  </div>
-  </div>
-    <div>
-      {%for student in students %}
-        {%include "studentinfo.html" %}
-      {% endfor %}
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="container">
+      <div class="row align-items-center">
+        <div class="col-lg-6">
+          <h1>Welcome to ErasmusTalk</h1>
+          <p class="lead">Connect with fellow Erasmus students, share experiences, and make your study abroad journey unforgettable!</p>
+          <div class="hero-buttons">
+            <a href="/signup" class="btn btn-light btn-hero">Get Started</a>
+            <a href="/login" class="btn btn-outline-light btn-hero">Sign In</a>
+          </div>
+        </div>
+        <div class="col-lg-6">
+          <img src="/static/students.jpg" class="img-fluid rounded shadow-lg" alt="Students">
+        </div>
+      </div>
     </div>
-    <div class="text-center">
-      <a href ="/login" class="btn btn-primary btn-lg">Login</a>
-      <a href ="/signup" class="btn btn-primary btn-lg">Sign Up</a>
+  </section>
+
+  <!-- Features Section -->
+  <section class="features">
+    <div class="container">
+      <h2 class="text-center mb-5">Why Choose ErasmusTalk?</h2>
+      <div class="row">
+        <div class="col-md-4">
+          <div class="feature-box">
+            <div class="feature-icon">
+              <i class="fas fa-users"></i>
+            </div>
+            <h3>Connect</h3>
+            <p>Find and connect with students heading to the same university as you.</p>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="feature-box">
+            <div class="feature-icon">
+              <i class="fas fa-comments"></i>
+            </div>
+            <h3>Share</h3>
+            <p>Share experiences and get valuable insights from other students.</p>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="feature-box">
+            <div class="feature-icon">
+              <i class="fas fa-map-marked-alt"></i>
+            </div>
+            <h3>Explore</h3>
+            <p>Discover tips about accommodation, local culture, and student life.</p>
+          </div>
+        </div>
+      </div>
     </div>
-  </div>
+  </section>
+
+  <!-- Students Section -->
+  <section class="students-section">
+    <div class="container">
+      <h2 class="text-center mb-5">Meet Our Community</h2>
+      <div class="row">
+        {% for student in students %}
+        <div class="col-md-6 col-lg-4">
+          <div class="student-card">
+            <h4>{{student.name}} {{student.surname}}</h4>
+            <p class="text-muted"><i class="fas fa-university"></i> Going to: {{student.going_to}}</p>
+            {% if student.department %}
+            <p class="text-muted"><i class="fas fa-graduation-cap"></i> {{student.department}}</p>
+            {% endif %}
+            <div class="mt-3">
+              <a href="mailto:{{student.email}}" class="btn btn-sm btn-outline-primary"><i class="fas fa-envelope"></i> Contact</a>
+              <a href="/student/{{student.id}}" class="btn btn-sm btn-primary"><i class="fas fa-user"></i> Profile</a>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <section class="cta-section">
+    <div class="container text-center">
+      <h2 class="mb-4">Ready to Start Your Erasmus Journey?</h2>
+      <p class="lead mb-4">Join our community today and make your study abroad experience memorable!</p>
+      <a href="/signup" class="btn btn-light btn-hero">Join Now</a>
+    </div>
+  </section>
+
   {%include "footer.html" %}
+
+  <!-- Font Awesome -->
+  <script src="https://kit.fontawesome.com/your-kit-code.js" crossorigin="anonymous"></script>
 </body>
 
 </html>
