@@ -1,78 +1,75 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign Up - Erasmus Talk</title>
-    {% include 'account/account.base.html' %}
+    {% include 'bootstrap.html' %}
     <style>
-        /* Add styles for mobile responsiveness */
-        @media (max-width: 768px) {
-            .container.sign-up {
-                padding: 15px;
+        .auth-container {
+            max-width: 100%;
+            padding: 15px;
+        }
+        
+        @media (min-width: 768px) {
+            .auth-container {
+                max-width: 500px;
+                margin: auto;
             }
-            .form {
-                padding: 20px;
-            }
-            .form-group label {
-                font-size: 14px;
-            }
-            .form-control {
-                font-size: 14px;
-            }
-            .btn {
-                width: 100%;
-            }
+        }
+        
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        
+        .card {
+            border: none;
+            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
         }
     </style>
 </head>
-
 <body class="bg-primary">
-    <div class="container sign-up">
-        <div class="row justify-content-center">
-            <div class="col-xl-10 col-lg-12 col-md-9">
-                <div class="card o-hidden border-0 shadow-lg my-5">
-                    <div class="card-body p-0">
-                        <div class="row">
-                            <div class="col-lg-12">
-                                <div class="form" >
-                                    <div class="text-center">
-                                        <h1 class="h4 text-gray-900 mb-4">Welcome to ErasmusTalk!</h1>
-                                    </div>
-                                    <form method="POST" action="{{ url_for('sign_up_page') }}">
-                                        <div class="form-group">
-                                            <label for="name" class="fw-bold" style="font-weight: bold !important;">Name</label>
-                                            <input type="text" class="form-control" id="name" name="name" placeholder="Enter your name" required>
-                                        </div>
-                                        <div class="form-group">
-                                            <label for="surname" class="fw-bold" style="font-weight: bold !important;">Surname</label>
-                                            <input type="text" class="form-control" id="surname" name="surname" placeholder="Enter your surname" required>
-                                        </div>
-                                        <div class="form-group">
-                                            <label for="email" class="fw-bold" style="font-weight: bold !important;">Email</label>
-                                            <input type="email" class="form-control" id="email" name="email" placeholder="Enter your email" required>
-                                        </div>
-                                        <div class="form-group">
-                                          <label class ="fw-bold" for="exampleInputPassword1" style="font-weight: bold !important;">Password</label>
-                                          <input type="password" class="form-control" id="exampleInputPassword1" placeholder="Password">
-                                        </div>
-                                        <div class="form-group">
-                                            <label for="department" class="fw-bold" style="font-weight: bold !important;">Department</label>
-                                            <input type="text" class="form-control" id="department" name="department" placeholder="Enter your department" required>
-                                        </div>
-                                        <div class="form-group">
-                                            <label for="going_to" class="fw-bold" style="font-weight: bold !important;">Going To</label>
-                                            <input type="text" class="form-control" id="going_to" name="going_to" placeholder="Enter your destination" required>
-                                        </div>
-                                        <div class="form-check">
-                                            <input type="checkbox" class="form-check-input" id="exampleCheck1">
-                                            <label class="form-check-label" for="exampleCheck1">Terms and Conditions</label>
-                                        </div>
-                                        <button type="submit" class="btn btn-primary">Submit</button>
-                                      </form>
-                                    <hr>
-                                </div>
-                            </div>
+    <div class="container">
+        <div class="auth-container">
+            <div class="card mt-5">
+                <div class="card-body p-4">
+                    <div class="text-center">
+                        <h1 class="h4 text-gray-900 mb-4">Welcome to ErasmusTalk!</h1>
+                    </div>
+                    <form method="POST" action="{{ url_for('sign_up_page') }}">
+                        <div class="form-group">
+                            <label for="name" class="fw-bold">Name</label>
+                            <input type="text" class="form-control" id="name" name="name" placeholder="Enter your name" required>
                         </div>
+                        <div class="form-group">
+                            <label for="surname" class="fw-bold">Surname</label>
+                            <input type="text" class="form-control" id="surname" name="surname" placeholder="Enter your surname" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="email" class="fw-bold">Email</label>
+                            <input type="email" class="form-control" id="email" name="email" placeholder="Enter your email" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="password" class="fw-bold">Password</label>
+                            <input type="password" class="form-control" id="password" name="password" placeholder="Enter your password" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="department" class="fw-bold">Department</label>
+                            <input type="text" class="form-control" id="department" name="department" placeholder="Enter your department" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="going_to" class="fw-bold">Going To</label>
+                            <input type="text" class="form-control" id="going_to" name="going_to" placeholder="Enter your destination" required>
+                        </div>
+                        <div class="form-check mb-3">
+                            <input type="checkbox" class="form-check-input" id="terms" required>
+                            <label class="form-check-label" for="terms">Accept Terms and Conditions</label>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Sign Up</button>
+                    </form>
+                    <hr>
+                    <div class="text-center">
+                        <a class="small" href="{{ url_for('login') }}">Already have an account? Login!</a>
                     </div>
                 </div>
             </div>
