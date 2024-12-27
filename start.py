@@ -4,11 +4,62 @@ import os
 
 from flask import Flask, render_template, jsonify, request, redirect, url_for, session
 import requests
-from database import load_students_from_db, load_student_from_db, add_student_to_db
+from database import load_students_from_db, load_student_from_db, add_student_to_db, verify_user_credentials
 import urllib.parse
+import jwt
+from datetime import datetime, timedelta
+from functools import wraps
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
+JWT_SECRET = os.urandom(24)  # In production, use a stable secret key
+
+def token_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        token = request.headers.get('Authorization')
+        if not token:
+            return jsonify({'message': 'Token is missing'}), 401
+        try:
+            token = token.split(' ')[1]  # Remove 'Bearer ' prefix
+            data = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
+            current_user = data
+        except:
+            return jsonify({'message': 'Token is invalid'}), 401
+        return f(current_user, *args, **kwargs)
+    return decorated
+
+@app.route("/api/login", methods=["POST"])
+def login_api():
+    data = request.get_json()
+    email = data.get('email')
+    password = data.get('password')
+    
+    if not email or not password:
+        return jsonify({"message": "Email and password are required"}), 400
+    
+    # Verify credentials from database
+    user = verify_user_credentials(email, password)
+    
+    if user:
+        # Generate JWT token
+        token = jwt.encode({
+            'user_id': user['id'],
+            'email': user['email'],
+            'name': user['name'],
+            'exp': datetime.utcnow() + timedelta(days=1)
+        }, JWT_SECRET, algorithm="HS256")
+        
+        return jsonify({
+            "token": token,
+            "user": {
+                "id": user['id'],
+                "email": user['email'],
+                "name": user['name']
+            }
+        }), 200
+    else:
+        return jsonify({"message": "Invalid email or password"}), 401
 
 @app.route("/")
 def hello_world():

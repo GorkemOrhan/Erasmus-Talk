@@ -46,5 +46,24 @@ def add_student_to_db(data):
         # Return the inserted student data
         return data
         
+def verify_user_credentials(email, password):
+    with engine.connect() as conn:
+        # Get user with matching email
+        query = text("SELECT * FROM students WHERE email = :email")
+        result = conn.execute(query, {"email": email})
+        user = result.fetchone()
+        
+        if user:
+            # In production, use proper password hashing (e.g., bcrypt)
+            # For now, simple password comparison
+            if user.password == password:
+                return {
+                    'id': user.id,
+                    'email': user.email,
+                    'name': user.name,
+                    'surname': user.surname
+                }
+        return None
+        
 
         

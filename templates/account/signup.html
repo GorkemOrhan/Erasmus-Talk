@@ -1,267 +1,184 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sign Up - Erasmus Talk</title>
-    {% include 'bootstrap.html' %}
-    <!-- Add jQuery UI CSS -->
-    <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
-    <style>
+{% extends "layout.html" %}
+
+{% block title %}Sign Up - ErasmusTalk{% endblock %}
+
+{% block styles %}
+<style>
+    body {
+        background: linear-gradient(rgba(78, 115, 223, 0.9), rgba(78, 115, 223, 0.9)), url('/static/erasmus flag.png');
+        background-size: cover;
+        background-position: center;
+        background-attachment: fixed;
+        min-height: 100vh;
+    }
+    
+    .auth-container {
+        max-width: 100%;
+        padding: 15px;
+    }
+    
+    @media (min-width: 768px) {
         .auth-container {
-            max-width: 100%;
-            padding: 15px;
+            max-width: 600px;
+            margin: auto;
         }
-        
-        @media (min-width: 768px) {
-            .auth-container {
-                max-width: 500px;
-                margin: auto;
-            }
-        }
-        
-        .form-group {
-            margin-bottom: 1rem;
-        }
-        
-        .card {
-            border: none;
-            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
-        }
+    }
+    
+    .form-group {
+        margin-bottom: 1rem;
+    }
+    
+    .card {
+        border: none;
+        box-shadow: 0 0.15rem 1.75rem 0 rgba(0, 0, 0, 0.15);
+        background-color: rgba(255, 255, 255, 0.98);
+        backdrop-filter: blur(10px);
+    }
 
-        .invalid-feedback {
-            display: none;
-            font-size: 80%;
-        }
+    .invalid-feedback {
+        font-size: 80%;
+    }
 
-        /* Autocomplete styles */
-        .ui-autocomplete {
-            max-height: 200px;
-            overflow-y: auto;
-            overflow-x: hidden;
-            z-index: 9999;
-        }
+    .btn-primary {
+        background-color: #4e73df;
+        border-color: #4e73df;
+        padding: 12px 30px;
+        font-size: 1.1rem;
+        border-radius: 30px;
+        transition: background-color 0.3s, border-color 0.3s;
+        transform: none !important;
+        box-shadow: none !important;
+    }
 
-        .ui-menu-item {
-            padding: 5px 10px;
-            font-size: 14px;
-        }
+    .btn-primary:hover, 
+    .btn-primary:active, 
+    .btn-primary:focus {
+        background-color: #2e59d9;
+        border-color: #2e59d9;
+        transform: none !important;
+        box-shadow: none !important;
+    }
 
-        .ui-state-active,
-        .ui-widget-content .ui-state-active {
-            border: 1px solid #4e73df;
-            background: #4e73df;
-            color: white;
-        }
-    </style>
-</head>
-<body class="bg-primary">
-    <div class="container">
-        <div class="auth-container">
-            <div class="card mt-5">
-                <div class="card-body p-4">
-                    <div class="text-center">
-                        <h1 class="h4 text-gray-900 mb-4">Welcome to ErasmusTalk!</h1>
+    .form-control {
+        border-radius: 10px;
+        padding: 12px;
+    }
+
+    .form-control:focus {
+        border-color: #4e73df;
+        box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.25);
+    }
+
+    .card-body {
+        padding: 2.5rem;
+    }
+
+    .text-primary {
+        color: #4e73df !important;
+    }
+
+    .small {
+        color: #4e73df;
+        text-decoration: none;
+    }
+
+    .small:hover {
+        color: #2e59d9;
+        text-decoration: underline;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="auth-container">
+        <div class="card mt-5">
+            <div class="card-body">
+                <div class="text-center mb-4">
+                    <h1 class="h3 text-gray-900">Join ErasmusTalk</h1>
+                    <p class="text-muted">Connect with fellow Erasmus students worldwide</p>
+                </div>
+                <form method="POST" action="{{ url_for('sign_up_page') }}" class="needs-validation" novalidate>
+                    <div class="form-group">
+                        <label for="name" class="fw-bold">Name</label>
+                        <input type="text" class="form-control" id="name" name="name" placeholder="Enter your name" required pattern="[A-Za-z ]{2,50}">
+                        <div class="invalid-feedback">
+                            Please enter a valid name (2-50 characters, letters only).
+                        </div>
                     </div>
-                    <form method="POST" action="{{ url_for('sign_up_page') }}" class="needs-validation" novalidate>
-                        <div class="form-group">
-                            <label for="name" class="fw-bold">Name</label>
-                            <input type="text" class="form-control" id="name" name="name" placeholder="Enter your name" required pattern="[A-Za-z ]{2,50}">
-                            <div class="invalid-feedback">
-                                Please enter a valid name (2-50 characters, letters only).
+                    <div class="form-group">
+                        <label for="surname" class="fw-bold">Surname</label>
+                        <input type="text" class="form-control" id="surname" name="surname" placeholder="Enter your surname" required pattern="[A-Za-z ]{2,50}">
+                        <div class="invalid-feedback">
+                            Please enter a valid surname (2-50 characters, letters only).
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="email" class="fw-bold">Email</label>
+                        <input type="email" class="form-control" id="email" name="email" placeholder="Enter your email" required>
+                        <div class="invalid-feedback">
+                            Please enter a valid email address.
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="password" class="fw-bold">Password</label>
+                        <input type="password" class="form-control" id="password" name="password" 
+                            placeholder="Enter your password" 
+                            required 
+                            minlength="8"
+                            maxlength="50"
+                            pattern="^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*#?&]{8,50}$">
+                        <div class="invalid-feedback">
+                            Password must be 8-50 characters and include at least one letter and one number.
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="department" class="fw-bold">Department</label>
+                        <input type="text" class="form-control" id="department" name="department" placeholder="Enter your department" required>
+                        <div class="invalid-feedback">
+                            Please enter your department.
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="fw-bold">Going To</label>
+                        <div class="row">
+                            <div class="col-md-6 mb-2 mb-md-0">
+                                <input type="text" class="form-control" id="country_selector" name="country" 
+                                       placeholder="Select country..." required>
+                                <div class="invalid-feedback">
+                                    Please select a country.
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <select class="form-select form-control" id="going_to" name="going_to" required disabled>
+                                    <option value="">Select university...</option>
+                                </select>
+                                <div class="invalid-feedback">
+                                    Please select a university.
+                                </div>
                             </div>
                         </div>
-                        <div class="form-group">
-                            <label for="surname" class="fw-bold">Surname</label>
-                            <input type="text" class="form-control" id="surname" name="surname" placeholder="Enter your surname" required pattern="[A-Za-z ]{2,50}">
-                            <div class="invalid-feedback">
-                                Please enter a valid surname (2-50 characters, letters only).
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label for="email" class="fw-bold">Email</label>
-                            <input type="email" class="form-control" id="email" name="email" placeholder="Enter your email" required>
-                            <div class="invalid-feedback">
-                                Please enter a valid email address.
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label for="password" class="fw-bold">Password</label>
-                            <input type="password" class="form-control" id="password" name="password" 
-                                placeholder="Enter your password" 
-                                required 
-                                minlength="8"
-                                maxlength="50"
-                                pattern="^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*#?&]{8,50}$">
-                            <div class="invalid-feedback">
-                                Password must be 8-50 characters and include at least one letter and one number.
-                            </div>
-                            <small class="form-text text-muted">
-                                Your password must be 8-50 characters long and contain at least one letter and one number.
+                        <div id="university_info" class="mt-2" style="display: none;">
+                            <small class="text-muted">
+                                University Website: <a id="university_link" href="#" target="_blank"></a>
                             </small>
                         </div>
-                        <div class="form-group">
-                            <label for="department" class="fw-bold">Department</label>
-                            <input type="text" class="form-control" id="department" name="department" placeholder="Enter your department" required>
-                            <div class="invalid-feedback">
-                                Please enter your department.
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label class="fw-bold">Going To</label>
-                            <div class="row">
-                                <div class="col-md-6 mb-2 mb-md-0">
-                                    <input type="text" class="form-control" id="country_selector" name="country" 
-                                           placeholder="Select country..." required>
-                                    <div class="invalid-feedback">
-                                        Please select a country.
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <select class="form-select" id="going_to" name="going_to" required disabled>
-                                        <option value="">Select university...</option>
-                                    </select>
-                                    <div class="invalid-feedback">
-                                        Please select a university.
-                                    </div>
-                                </div>
-                            </div>
-                            <div id="university_info" class="mt-2" style="display: none;">
-                                <small class="text-muted">
-                                    University Website: <a id="university_link" href="#" target="_blank"></a>
-                                </small>
-                            </div>
-                            <small class="form-text text-muted">
-                                First select a country, then choose a university
-                            </small>
-                        </div>
-                        <div class="form-check mb-3">
-                            <input type="checkbox" class="form-check-input" id="terms" required>
-                            <label class="form-check-label" for="terms">Accept Terms and Conditions</label>
-                            <div class="invalid-feedback">
-                                You must agree to the terms and conditions.
-                            </div>
-                        </div>
-                        <button type="submit" class="btn btn-primary w-100">Sign Up</button>
-                    </form>
-                    <hr>
-                    <div class="text-center">
-                        <a class="small" href="{{ url_for('login') }}">Already have an account? Login!</a>
                     </div>
+                    <div class="form-check mb-4">
+                        <input type="checkbox" class="form-check-input" id="terms" required>
+                        <label class="form-check-label" for="terms">I accept the Terms and Conditions</label>
+                        <div class="invalid-feedback">
+                            You must agree to the terms and conditions.
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Create Account</button>
+                </form>
+                <hr class="my-4">
+                <div class="text-center">
+                    <a class="small" href="{{ url_for('login') }}">Already have an account? Login!</a>
                 </div>
             </div>
         </div>
     </div>
-
-    <!-- Add jQuery and jQuery UI -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
-    
-    <script>
-        // Bootstrap form validation
-        (function () {
-            'use strict'
-            var forms = document.querySelectorAll('.needs-validation')
-            Array.prototype.slice.call(forms)
-                .forEach(function (form) {
-                    form.addEventListener('submit', function (event) {
-                        if (!form.checkValidity()) {
-                            event.preventDefault()
-                            event.stopPropagation()
-                        }
-                        form.classList.add('was-validated')
-                    }, false)
-                })
-        })()
-
-        // Country and University Selection
-        $(document).ready(function() {
-            let universitiesData = {};
-            const $countrySelector = $("#country_selector");
-            const $universitySelect = $("#going_to");
-            
-            // Load universities data
-            $.ajax({
-                url: 'https://raw.githubusercontent.com/Hipo/university-domains-list/master/world_universities_and_domains.json',
-                method: 'GET',
-                dataType: 'json',
-                success: function(data) {
-                    // Group universities by country
-                    data.forEach(uni => {
-                        if (!universitiesData[uni.country]) {
-                            universitiesData[uni.country] = [];
-                        }
-                        universitiesData[uni.country].push({
-                            name: uni.name,
-                            web_pages: uni.web_pages
-                        });
-                    });
-
-                    // Get sorted list of countries
-                    const countries = Object.keys(universitiesData).sort();
-
-                    // Setup country autocomplete
-                    $countrySelector.autocomplete({
-                        source: countries,
-                        minLength: 1,
-                        delay: 300,
-                        select: function(event, ui) {
-                            const selectedCountry = ui.item.value;
-                            $(this).val(selectedCountry);
-                            populateUniversities(selectedCountry);
-                            return false;
-                        }
-                    });
-                },
-                error: function(error) {
-                    console.error('Error loading universities:', error);
-                }
-            });
-
-            function populateUniversities(country) {
-                $universitySelect.prop('disabled', false);
-                $universitySelect.empty();
-                $universitySelect.append('<option value="">Select university...</option>');
-                
-                if (universitiesData[country]) {
-                    // Sort universities alphabetically
-                    const universities = universitiesData[country].sort((a, b) => 
-                        a.name.localeCompare(b.name)
-                    );
-
-                    universities.forEach(uni => {
-                        const webPage = uni.web_pages && uni.web_pages.length > 0 ? uni.web_pages[0] : '';
-                        $universitySelect.append(
-                            `<option value="${uni.name}" data-web="${webPage}">${uni.name}</option>`
-                        );
-                    });
-                }
-
-                $("#university_info").hide();
-            }
-
-            // Handle university selection
-            $universitySelect.on("change", function() {
-                const selectedOption = $(this).find("option:selected");
-                const webPage = selectedOption.data("web");
-                
-                if (webPage) {
-                    $("#university_link").attr("href", webPage).text(webPage);
-                    $("#university_info").show();
-                } else {
-                    $("#university_info").hide();
-                }
-            });
-
-            // Clear university selection when country changes
-            $countrySelector.on("change", function() {
-                if (!$(this).val()) {
-                    $universitySelect.val("");
-                    $universitySelect.prop("disabled", true);
-                    $("#university_info").hide();
-                }
-            });
-        });
-    </script>
-</body>
-</html>
+</div>
+{% endblock %}
