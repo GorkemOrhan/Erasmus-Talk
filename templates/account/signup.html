@@ -26,6 +26,11 @@
             border: none;
             box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
         }
+
+        .invalid-feedback {
+            display: none;
+            font-size: 80%;
+        }
     </style>
 </head>
 <body class="bg-primary">
@@ -36,34 +41,55 @@
                     <div class="text-center">
                         <h1 class="h4 text-gray-900 mb-4">Welcome to ErasmusTalk!</h1>
                     </div>
-                    <form method="POST" action="{{ url_for('sign_up_page') }}">
+                    <form method="POST" action="{{ url_for('sign_up_page') }}" class="needs-validation" novalidate>
                         <div class="form-group">
                             <label for="name" class="fw-bold">Name</label>
-                            <input type="text" class="form-control" id="name" name="name" placeholder="Enter your name" required>
+                            <input type="text" class="form-control" id="name" name="name" placeholder="Enter your name" required pattern="[A-Za-z ]{2,50}">
+                            <div class="invalid-feedback">
+                                Please enter a valid name (2-50 characters, letters only).
+                            </div>
                         </div>
                         <div class="form-group">
                             <label for="surname" class="fw-bold">Surname</label>
-                            <input type="text" class="form-control" id="surname" name="surname" placeholder="Enter your surname" required>
+                            <input type="text" class="form-control" id="surname" name="surname" placeholder="Enter your surname" required pattern="[A-Za-z ]{2,50}">
+                            <div class="invalid-feedback">
+                                Please enter a valid surname (2-50 characters, letters only).
+                            </div>
                         </div>
                         <div class="form-group">
                             <label for="email" class="fw-bold">Email</label>
                             <input type="email" class="form-control" id="email" name="email" placeholder="Enter your email" required>
+                            <div class="invalid-feedback">
+                                Please enter a valid email address.
+                            </div>
                         </div>
                         <div class="form-group">
                             <label for="password" class="fw-bold">Password</label>
-                            <input type="password" class="form-control" id="password" name="password" placeholder="Enter your password" required>
+                            <input type="password" class="form-control" id="password" name="password" placeholder="Enter your password" required minlength="8">
+                            <div class="invalid-feedback">
+                                Password must be at least 8 characters long.
+                            </div>
                         </div>
                         <div class="form-group">
                             <label for="department" class="fw-bold">Department</label>
                             <input type="text" class="form-control" id="department" name="department" placeholder="Enter your department" required>
+                            <div class="invalid-feedback">
+                                Please enter your department.
+                            </div>
                         </div>
                         <div class="form-group">
                             <label for="going_to" class="fw-bold">Going To</label>
                             <input type="text" class="form-control" id="going_to" name="going_to" placeholder="Enter your destination" required>
+                            <div class="invalid-feedback">
+                                Please enter your destination.
+                            </div>
                         </div>
                         <div class="form-check mb-3">
                             <input type="checkbox" class="form-check-input" id="terms" required>
                             <label class="form-check-label" for="terms">Accept Terms and Conditions</label>
+                            <div class="invalid-feedback">
+                                You must agree to the terms and conditions.
+                            </div>
                         </div>
                         <button type="submit" class="btn btn-primary w-100">Sign Up</button>
                     </form>
@@ -75,5 +101,23 @@
             </div>
         </div>
     </div>
+
+    <script>
+        // Bootstrap form validation
+        (function () {
+            'use strict'
+            var forms = document.querySelectorAll('.needs-validation')
+            Array.prototype.slice.call(forms)
+                .forEach(function (form) {
+                    form.addEventListener('submit', function (event) {
+                        if (!form.checkValidity()) {
+                            event.preventDefault()
+                            event.stopPropagation()
+                        }
+                        form.classList.add('was-validated')
+                    }, false)
+                })
+        })()
+    </script>
 </body>
 </html>
