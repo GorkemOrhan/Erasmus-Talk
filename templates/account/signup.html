@@ -126,6 +126,11 @@
                                     </div>
                                 </div>
                             </div>
+                            <div id="university_info" class="mt-2" style="display: none;">
+                                <small class="text-muted">
+                                    University Website: <a id="university_link" href="#" target="_blank"></a>
+                                </small>
+                            </div>
                             <small class="form-text text-muted">
                                 First select a country, then choose a university
                             </small>
@@ -171,65 +176,90 @@
 
         // Country and University Selection
         $(document).ready(function() {
-            // Store all universities data
             let universitiesData = {};
+            const $countrySelector = $("#country_selector");
+            const $universitySelect = $("#going_to");
             
-            // Country Autocomplete
-            $("#country_selector").autocomplete({
-                source: function(request, response) {
-                    $.ajax({
-                        url: "http://universities.hipolabs.com/search",
-                        dataType: "json",
-                        data: {
-                            name: ""  // Get all universities to extract countries
-                        },
-                        success: function(data) {
-                            // Group universities by country
-                            data.forEach(uni => {
-                                if (!universitiesData[uni.country]) {
-                                    universitiesData[uni.country] = [];
-                                }
-                                if (!universitiesData[uni.country].includes(uni.name)) {
-                                    universitiesData[uni.country].push(uni.name);
-                                }
-                            });
-                            
-                            // Extract unique countries and filter based on input
-                            let countries = Object.keys(universitiesData);
-                            let matches = countries.filter(country => 
-                                country.toLowerCase().includes(request.term.toLowerCase())
-                            );
-                            response(matches);
+            // Load universities data
+            $.ajax({
+                url: 'https://raw.githubusercontent.com/Hipo/university-domains-list/master/world_universities_and_domains.json',
+                method: 'GET',
+                dataType: 'json',
+                success: function(data) {
+                    // Group universities by country
+                    data.forEach(uni => {
+                        if (!universitiesData[uni.country]) {
+                            universitiesData[uni.country] = [];
+                        }
+                        universitiesData[uni.country].push({
+                            name: uni.name,
+                            web_pages: uni.web_pages
+                        });
+                    });
+
+                    // Get sorted list of countries
+                    const countries = Object.keys(universitiesData).sort();
+
+                    // Setup country autocomplete
+                    $countrySelector.autocomplete({
+                        source: countries,
+                        minLength: 1,
+                        delay: 300,
+                        select: function(event, ui) {
+                            const selectedCountry = ui.item.value;
+                            $(this).val(selectedCountry);
+                            populateUniversities(selectedCountry);
+                            return false;
                         }
                     });
                 },
-                minLength: 1,
-                delay: 300,
-                select: function(event, ui) {
-                    const selectedCountry = ui.item.value;
-                    $(this).val(selectedCountry);
-                    
-                    // Enable and populate university dropdown
-                    const $universitySelect = $("#going_to");
-                    $universitySelect.prop("disabled", false);
-                    $universitySelect.empty();
-                    $universitySelect.append('<option value="">Select university...</option>');
-                    
+                error: function(error) {
+                    console.error('Error loading universities:', error);
+                }
+            });
+
+            function populateUniversities(country) {
+                $universitySelect.prop('disabled', false);
+                $universitySelect.empty();
+                $universitySelect.append('<option value="">Select university...</option>');
+                
+                if (universitiesData[country]) {
                     // Sort universities alphabetically
-                    const universities = universitiesData[selectedCountry].sort();
+                    const universities = universitiesData[country].sort((a, b) => 
+                        a.name.localeCompare(b.name)
+                    );
+
                     universities.forEach(uni => {
-                        $universitySelect.append(`<option value="${uni}">${uni}</option>`);
+                        const webPage = uni.web_pages && uni.web_pages.length > 0 ? uni.web_pages[0] : '';
+                        $universitySelect.append(
+                            `<option value="${uni.name}" data-web="${webPage}">${uni.name}</option>`
+                        );
                     });
-                    
-                    return false;
+                }
+
+                $("#university_info").hide();
+            }
+
+            // Handle university selection
+            $universitySelect.on("change", function() {
+                const selectedOption = $(this).find("option:selected");
+                const webPage = selectedOption.data("web");
+                
+                if (webPage) {
+                    $("#university_link").attr("href", webPage).text(webPage);
+                    $("#university_info").show();
+                } else {
+                    $("#university_info").hide();
                 }
             });
 
             // Clear university selection when country changes
-            $("#country_selector").on("change", function() {
-                const $universitySelect = $("#going_to");
-                $universitySelect.val("");
-                $universitySelect.prop("disabled", true);
+            $countrySelector.on("change", function() {
+                if (!$(this).val()) {
+                    $universitySelect.val("");
+                    $universitySelect.prop("disabled", true);
+                    $("#university_info").hide();
+                }
             });
         });
     </script>
