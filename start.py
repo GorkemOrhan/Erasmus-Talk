@@ -1,7 +1,7 @@
 import os
 
 #os.environ['FLASK_ENV'] = 'test'
-
+from flask_debugtoolbar import DebugToolbarExtension
 from flask import Flask, render_template, jsonify, request, redirect, url_for, session
 import requests
 from database import load_students_from_db, load_student_from_db, add_student_to_db, verify_user_credentials
@@ -11,7 +11,9 @@ from datetime import datetime, timedelta
 from functools import wraps
 
 app = Flask(__name__)
+app.debug = True
 app.secret_key = os.urandom(24)
+toolbar = DebugToolbarExtension(app)
 JWT_SECRET = os.urandom(24)  # In production, use a stable secret key
 
 def token_required(f):
@@ -187,6 +189,10 @@ def callback():
     return redirect(url_for('hello_world'))
 
 ## LinkedIn Login End ##
+
+@app.route("/forgot-password", methods=["GET", "POST"])
+def forgot_password():
+    return render_template("account/forgot-password.html")
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0",port=7080, debug=True)

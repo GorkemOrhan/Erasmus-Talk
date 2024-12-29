@@ -11,6 +11,8 @@
                 <span class="ms-2 fw-bold text-primary">ErasmusTalk</span>
             </a>
             
+            <!-- Only show navigation on non-auth pages -->
+            {% if not request.path.startswith('/login') and not request.path.startswith('/signup') and not request.path.startswith('/forgot-password') %}
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
@@ -51,6 +53,7 @@
                     </div>
                 </ul>
             </div>
+            {% endif %}
         </div>
     </nav>
     <style>
@@ -85,39 +88,42 @@
         }
     </style>
     <script>
-        // Check authentication status on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            checkAuthStatus();
-        });
+        // Only run auth check on non-auth pages
+        if (!window.location.pathname.startsWith('/login') && !window.location.pathname.startsWith('/signup')) {
+            // Check authentication status on page load
+            document.addEventListener('DOMContentLoaded', function() {
+                checkAuthStatus();
+            });
 
-        // Listen for login event
-        window.addEventListener('user-logged-in', checkAuthStatus);
+            // Listen for login event
+            window.addEventListener('user-logged-in', checkAuthStatus);
 
-        function checkAuthStatus() {
-            const token = localStorage.getItem('token');
-            const user = JSON.parse(localStorage.getItem('user') || '{}');
-            const authButtons = document.getElementById('auth-buttons');
-            const userMenu = document.getElementById('user-menu');
-            const usernameElement = document.getElementById('username');
+            function checkAuthStatus() {
+                const token = localStorage.getItem('token');
+                const user = JSON.parse(localStorage.getItem('user') || '{}');
+                const authButtons = document.getElementById('auth-buttons');
+                const userMenu = document.getElementById('user-menu');
+                const usernameElement = document.getElementById('username');
 
-            if (token && user) {
-                // User is logged in
-                authButtons.classList.add('d-none');
-                userMenu.classList.remove('d-none');
-                usernameElement.textContent = user.name || user.email;
-            } else {
-                // User is logged out
-                authButtons.classList.remove('d-none');
-                userMenu.classList.add('d-none');
+                if (token && user) {
+                    // User is logged in
+                    authButtons.classList.add('d-none');
+                    userMenu.classList.remove('d-none');
+                    usernameElement.textContent = user.name || user.email;
+                } else {
+                    // User is logged out
+                    authButtons.classList.remove('d-none');
+                    userMenu.classList.add('d-none');
+                }
             }
-        }
 
-        // Handle logout
-        document.getElementById('logout').addEventListener('click', function(e) {
-            e.preventDefault();
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
-            window.location.href = '/';
-        });
+            // Handle logout
+            document.getElementById('logout').addEventListener('click', function(e) {
+                e.preventDefault();
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                window.location.href = '/';
+            });
+        }
     </script>
 </header> 
