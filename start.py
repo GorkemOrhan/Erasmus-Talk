@@ -1,7 +1,7 @@
 import os
 from flask import Flask, render_template, jsonify, request, redirect, url_for, session
 import requests
-from database import load_students_from_db, load_student_from_db, add_student_to_db, verify_user_credentials
+from database import load_students_from_db, load_student_from_db, add_student_to_db, verify_user_credentials, get_dashboard_stats
 import urllib.parse
 import jwt
 from datetime import datetime, timedelta
@@ -35,6 +35,22 @@ def token_required(f):
         return f(current_user, *args, **kwargs)
     return decorated
 
+def admin_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        token = request.headers.get('Authorization')
+        if not token:
+            return redirect(url_for('login'))
+        try:
+            token = token.split(' ')[1]  # Remove 'Bearer ' prefix
+            data = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
+            if 'admin' not in data.get('roles', []):
+                return redirect(url_for('login'))
+        except:
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated
+
 @app.route("/api/login", methods=["POST"])
 def login_api():
     data = request.get_json()
@@ -53,6 +69,7 @@ def login_api():
             'user_id': user['id'],
             'email': user['email'],
             'name': user['name'],
+            'roles': user['roles'],
             'exp': datetime.utcnow() + timedelta(days=1)
         }, JWT_SECRET, algorithm="HS256")
         
@@ -61,7 +78,8 @@ def login_api():
             "user": {
                 "id": user['id'],
                 "email": user['email'],
-                "name": user['name']
+                "name": user['name'],
+                "roles": user['roles']
             }
         }), 200
     else:
@@ -202,6 +220,30 @@ def callback():
 @app.route("/forgot-password", methods=["GET", "POST"])
 def forgot_password():
     return render_template("account/forgot-password.html")
+
+@app.route("/admin")
+@admin_required
+def admin_dashboard():
+    stats = get_dashboard_stats()
+    return render_template("admin/dashboard.html", **stats)
+
+@app.route("/admin/students")
+@admin_required
+def admin_students():
+    students = load_students_from_db()
+    return render_template("admin/students.html", students=students)
+
+@app.route("/admin/universities")
+@admin_required
+def admin_universities():
+    # Add university management functionality
+    return render_template("admin/universities.html")
+
+@app.route("/admin/profile")
+@admin_required
+def admin_profile():
+    # Add admin profile functionality
+    return render_template("admin/profile.html")
 
 if __name__ == "__main__":
     port = int(os.environ.get('PORT', 10000))
