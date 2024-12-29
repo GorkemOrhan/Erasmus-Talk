@@ -2,6 +2,8 @@ from sqlalchemy import create_engine, text
 import os
 from dotenv import load_dotenv
 from datetime import datetime, timedelta
+import json
+import uuid
 
 env = os.getenv('FLASK_ENV', 'development')
 dotenv_path = f'.env.{env}'
@@ -73,10 +75,10 @@ def add_student_to_db(data):
             # Insert base user first
             user_query = text("""
                 INSERT INTO users (
-                    name, surname, email, password, user_type
+                    name, surname, email, password, user_type, activation_token
                 )
                 VALUES (
-                    :name, :surname, :email, :password, 'student'
+                    :name, :surname, :email, :password, 'student', :activation_token
                 )
                 RETURNING id
             """)
@@ -84,7 +86,8 @@ def add_student_to_db(data):
                 "name": data['name'],
                 "surname": data['surname'],
                 "email": data['email'],
-                "password": data['password']
+                "password": data['password'],
+                "activation_token": data.get('activation_token')
             })
             user_id = result.scalar()
 
@@ -106,7 +109,45 @@ def add_student_to_db(data):
             """)
             conn.execute(role_query, {"user_id": user_id})
 
+            # Get template ID for activation email
+            template_query = text("""
+                SELECT id FROM mail_templates WHERE name = 'account_activation'
+            """)
+            template_id = conn.execute(template_query).scalar()
+            
+            if not template_id:
+                raise ValueError("Activation email template not found")
+            
+            # Prepare activation URL and template data
+            activation_url = f"http://localhost:5000/activate/{data['activation_token']}"
+            template_data = {
+                "name": data['name'],
+                "activation_url": activation_url
+            }
+
+            # Queue activation email
+            email_query = text("""
+                INSERT INTO pending_mails (
+                    template_id, recipient_email, recipient_name,
+                    template_data, idempotency_key
+                )
+                VALUES (
+                    :template_id, :recipient_email, :recipient_name,
+                    :template_data, :idempotency_key
+                )
+            """)
+            
+            conn.execute(email_query, {
+                "template_id": template_id,
+                "recipient_email": data['email'],
+                "recipient_name": data['name'],
+                "template_data": json.dumps(template_data),
+                "idempotency_key": str(uuid.uuid4())
+            })
+
             trans.commit()
+            # Return user data including the ID
+            data['id'] = user_id
             return data
         except:
             trans.rollback()

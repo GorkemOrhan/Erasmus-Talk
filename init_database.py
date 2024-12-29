@@ -31,12 +31,51 @@ if not db_connection_string:
 db_connection_string = db_connection_string.strip('"').strip("'")
 print(f"Using connection string: {mask_connection_string(db_connection_string)}")
 
+# Define HTML template as a separate variable with proper escaping
+activation_html_template = '''
+<!DOCTYPE html>
+<html>
+<body>
+    <h2>Welcome to ErasmusTalk!</h2>
+    <p>Dear {{name}},</p>
+    <p>Thank you for joining ErasmusTalk. To activate your account, please click the button below:</p>
+    <p>
+        <a href="{{activation_url}}" style="background-color: #4e73df; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
+            Activate Account
+        </a>
+    </p>
+    <p>Or copy and paste this link in your browser:</p>
+    <p>{{activation_url}}</p>
+    <p>This link will expire in 24 hours.</p>
+    <p>Best regards,<br>The ErasmusTalk Team</p>
+</body>
+</html>
+'''.strip()
+
+activation_text_template = '''
+Welcome to ErasmusTalk!
+
+Dear {{name}},
+
+Thank you for joining ErasmusTalk. To activate your account, please visit this link:
+
+{{activation_url}}
+
+This link will expire in 24 hours.
+
+Best regards,
+The ErasmusTalk Team
+'''.strip()
+
 # SQL to create tables
-create_tables_sql = """
+create_tables_sql = f"""
 -- Ensure we're using the public schema
 SET search_path TO public;
 
 -- First, drop all existing tables in the correct order
+DROP TABLE IF EXISTS public.mail_logs CASCADE;
+DROP TABLE IF EXISTS public.pending_mails CASCADE;
+DROP TABLE IF EXISTS public.mail_templates CASCADE;
 DROP TABLE IF EXISTS public.password_reset_tokens CASCADE;
 DROP TABLE IF EXISTS public.profiles CASCADE;
 DROP TABLE IF EXISTS public.user_roles CASCADE;
@@ -108,6 +147,43 @@ CREATE TABLE public.password_reset_tokens (
     used BOOLEAN DEFAULT FALSE
 );
 
+-- Create mail_templates table
+CREATE TABLE public.mail_templates (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL UNIQUE,
+    subject VARCHAR(255) NOT NULL,
+    html_body TEXT NOT NULL,
+    text_body TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create pending_mails table
+CREATE TABLE public.pending_mails (
+    id SERIAL PRIMARY KEY,
+    template_id INTEGER REFERENCES public.mail_templates(id),
+    recipient_email VARCHAR(255) NOT NULL,
+    recipient_name VARCHAR(255),
+    template_data JSONB,  -- Store template variables
+    status VARCHAR(50) DEFAULT 'pending',  -- pending, processing, sent, failed
+    retry_count INTEGER DEFAULT 0,
+    next_retry_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    processed_at TIMESTAMP WITH TIME ZONE,
+    idempotency_key VARCHAR(255) UNIQUE,  -- Prevent duplicate sends
+    CONSTRAINT valid_status CHECK (status IN ('pending', 'processing', 'sent', 'failed'))
+);
+
+-- Create mail_logs table for tracking and troubleshooting
+CREATE TABLE public.mail_logs (
+    id SERIAL PRIMARY KEY,
+    pending_mail_id INTEGER REFERENCES public.pending_mails(id),
+    status VARCHAR(50) NOT NULL,
+    error_message TEXT,
+    provider_response JSONB,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Insert default roles
 INSERT INTO public.roles (name, description) VALUES
     ('admin', 'Administrator with full system access'),
@@ -160,6 +236,19 @@ try:
                 print(statement)
                 print(f"Error: {str(stmt_error)}")
                 raise
+        
+        # Insert mail template separately
+        template_query = text("""
+            INSERT INTO public.mail_templates (name, subject, html_body, text_body)
+            VALUES (:name, :subject, :html_body, :text_body)
+        """)
+        
+        conn.execute(template_query, {
+            "name": "account_activation",
+            "subject": "Welcome to ErasmusTalk - Activate Your Account",
+            "html_body": activation_html_template,
+            "text_body": activation_text_template
+        })
         
         print("Committing changes...")
         conn.commit()

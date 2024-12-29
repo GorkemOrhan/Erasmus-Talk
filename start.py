@@ -2,11 +2,15 @@ import os
 from flask import Flask, render_template, jsonify, request, redirect, url_for, session
 import requests
 from database import load_students_from_db, load_student_from_db, add_student_to_db, verify_user_credentials, get_dashboard_stats
+from email_service import queue_activation_email, start_scheduler, stop_scheduler, trigger_email_processing
 import urllib.parse
 import jwt
 from datetime import datetime, timedelta
 from functools import wraps
 from dotenv import load_dotenv
+import secrets
+from sqlalchemy.sql import text
+import atexit
 
 # Load environment variables
 load_dotenv()
@@ -19,6 +23,19 @@ JWT_SECRET = os.environ.get('JWT_SECRET', os.urandom(24))
 if os.environ.get('FLASK_ENV') == 'development':
     from flask_debugtoolbar import DebugToolbarExtension
     toolbar = DebugToolbarExtension(app)
+
+# Initialize scheduler flag
+scheduler_started = False
+
+@app.before_request
+def initialize():
+    """Initialize the application before first request."""
+    global scheduler_started
+    if not scheduler_started:
+        start_scheduler()
+        scheduler_started = True
+        # Register cleanup on application exit
+        atexit.register(stop_scheduler)
 
 def token_required(f):
     @wraps(f)
@@ -38,17 +55,25 @@ def token_required(f):
 def admin_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
+        # First check session for web routes
+        if 'signedin' in session:
+            user = session['signedin']
+            if user and 'roles' in user and 'admin' in user['roles']:
+                return f(*args, **kwargs)
+        
+        # Then check Authorization header for API routes
         token = request.headers.get('Authorization')
-        if not token:
-            return redirect(url_for('login'))
-        try:
-            token = token.split(' ')[1]  # Remove 'Bearer ' prefix
-            data = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
-            if 'admin' not in data.get('roles', []):
-                return redirect(url_for('login'))
-        except:
-            return redirect(url_for('login'))
-        return f(*args, **kwargs)
+        if token:
+            try:
+                token = token.split(' ')[1]  # Remove 'Bearer ' prefix
+                data = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
+                if 'admin' in data.get('roles', []):
+                    return f(*args, **kwargs)
+            except:
+                pass
+        
+        # If neither session nor token is valid, redirect to login
+        return redirect(url_for('login'))
     return decorated
 
 @app.route("/api/login", methods=["POST"])
@@ -64,6 +89,9 @@ def login_api():
     user = verify_user_credentials(email, password)
     
     if user:
+        # Store user data in session
+        session['signedin'] = user
+        
         # Generate JWT token
         token = jwt.encode({
             'user_id': user['id'],
@@ -108,6 +136,8 @@ def show_student(id):
 def sign_up_page():
     if request.method == "POST":
         data = request.form.to_dict()
+        # Generate activation token
+        data['activation_token'] = secrets.token_urlsafe(32)
         signedin = add_student_to_db(data)
         
         if signedin is None:
@@ -123,6 +153,7 @@ def sign_up_page():
 @app.route("/login")
 def login():
     return render_template("account/login.html")
+
 @app.route("/registration-success")
 def registration_success():
     signedin = session.get('signedin')
@@ -132,90 +163,32 @@ def registration_success():
         return "Error: No user data available", 400
     return render_template("account/registration-success.html", signedin=signedin)
 
-## LinkedIn Login Begin ##
-
-CLIENT_ID = "7731dqhcky4vxl"
-CLIENT_SECRET = "mgrwygPvYHARgVki"
-REDIRECT_URI = "http://localhost:5000/callback"
-ACCESS_TOKEN = "AQXITqv6bCR8dndWD8A3qcyL7_H5ENRHZ6aVz84C1ZqQGYnHtz6cw8vHWl4X56D59BB89BDqUTWprXJ3PULQ9rNqEE1QlY70n30H8dQ_aqbH7PTayhsd6G9PStDP4wQJAhoWugOjnF51bahRC5NQUuHeo0tk4EozSGPmjdyOjTGRSNGplcj-b_MPRUiqYE2aRSNZ93VmvquhxOrXFQlT0wPYnl0ZfRqQ8ZYYqtaQNeVw2TGGU7Jtv2GBkglU5kwXsBSNu7skGdnY1-0L5ZJR4_-jLEnGm4kKPTAcqFeJTXwikPvrleMKrG6HbW5nnY8q3anRe440OEP-N3OKJdrapsaObEI_iQ"
-
-@app.route("/loginvialinkedin")
-def login_via_linkedin():
-    linkedin_auth_url = (
-        "https://www.linkedin.com/oauth/v2/authorization?"
-        "response_type=code&"
-        f"client_id={CLIENT_ID}&"
-        f"redirect_uri={urllib.parse.quote(REDIRECT_URI)}&"
-        "scope=openid profile email"
-    )
-    
-    return redirect(linkedin_auth_url)
-
-@app.route("/callback")
-def callback():
-    
-    error = request.args.get('error')
-    error_description = request.args.get('error_description')
-
-    if error:
-        return "error description: "+error_description
-
-    code = request.args.get('code')
-    if not code:
-        return "Error: Missing 'code' parameter in the request.", 400
-    
-    access_token_url = "https://www.linkedin.com/oauth/v2/accessToken"
-    token_data = {
-        'grant_type': 'authorization_code',
-        'code': code,
-        'redirect_uri': REDIRECT_URI,
-        'client_id': CLIENT_ID,
-        'client_secret': CLIENT_SECRET
-    }
-    token_response = requests.post(access_token_url, data=token_data)
-    
-    if token_response.status_code != 200:
-        print("Failed to get access token:", token_response.text)
-        return f"Error: Failed to get access token, {token_response.text}", 500
-
-    token_json = token_response.json()
-    access_token = token_json.get('access_token')
-
-    profile_url = "https://api.linkedin.com/v2/userinfo"
-    profile_headers = {'Authorization': f'Bearer {access_token}'}
-    profile_response = requests.get(profile_url, headers=profile_headers)
-    
-    if profile_response.status_code != 200:
-        print("Failed to get profile data:", profile_response.text)
-        return f"Error: Failed to get profile data, {profile_response.text}", 500
-
-    profile_data = profile_response.json()
-    
-
-    email_url = "https://api.linkedin.com/v2/emailAddress?q=members&projection=(elements*(handle~))"
-    email_response = requests.get(email_url, headers=profile_headers)
-    
-    if email_response.status_code != 200:
-        print("Failed to get email data:", email_response.text)
-        return f"Error: Failed to get email data, {email_response.text}", 500
-
-    email_data = email_response.json()
-    
-    print("Profile Data:", profile_data)
-    print("Email Data:", email_data)
-    
-    if 'elements' in email_data:
-        email = email_data['elements'][0]['handle~']['emailAddress']
-    else:
-        print("Email data format is incorrect:", email_data)
-        return "Error: 'elements' key not found in email data", 500
-
-    session['profile'] = profile_data
-    session['email'] = email
-
-    return redirect(url_for('hello_world'))
-
-## LinkedIn Login End ##
+@app.route("/activate/<token>")
+def activate_account(token):
+    """Activate a user account."""
+    with engine.connect() as conn:
+        # Begin transaction
+        trans = conn.begin()
+        try:
+            # Find and activate user
+            query = text("""
+                UPDATE users
+                SET is_active = true, activation_token = NULL
+                WHERE activation_token = :token
+                RETURNING id
+            """)
+            result = conn.execute(query, {"token": token})
+            user_id = result.scalar()
+            
+            if not user_id:
+                trans.rollback()
+                return "Invalid or expired activation token", 400
+            
+            trans.commit()
+            return redirect(url_for('login'))
+        except:
+            trans.rollback()
+            raise
 
 @app.route("/forgot-password", methods=["GET", "POST"])
 def forgot_password():
@@ -244,6 +217,70 @@ def admin_universities():
 def admin_profile():
     # Add admin profile functionality
     return render_template("admin/profile.html")
+
+@app.route("/admin/email-monitor")
+@admin_required
+def email_monitor():
+    with engine.connect() as conn:
+        # Get email statistics
+        stats_query = text("""
+            SELECT 
+                COUNT(*) FILTER (WHERE status = 'pending') as pending_count,
+                COUNT(*) FILTER (WHERE status = 'processing') as processing_count,
+                COUNT(*) FILTER (WHERE status = 'sent') as sent_count,
+                COUNT(*) FILTER (WHERE status = 'failed') as failed_count,
+                COUNT(*) as total_count
+            FROM pending_mails
+        """)
+        stats = dict(conn.execute(stats_query).fetchone()._mapping)
+        
+        # Get recent emails with logs
+        recent_query = text("""
+            SELECT 
+                pm.id,
+                pm.recipient_email,
+                pm.recipient_name,
+                pm.status,
+                pm.retry_count,
+                pm.created_at,
+                pm.processed_at,
+                mt.name as template_name,
+                ml.error_message,
+                ml.created_at as log_time
+            FROM pending_mails pm
+            JOIN mail_templates mt ON pm.template_id = mt.id
+            LEFT JOIN (
+                SELECT DISTINCT ON (pending_mail_id) *
+                FROM mail_logs
+                ORDER BY pending_mail_id, created_at DESC
+            ) ml ON pm.id = ml.pending_mail_id
+            ORDER BY pm.created_at DESC
+            LIMIT 50
+        """)
+        recent_emails = [dict(row._mapping) for row in conn.execute(recent_query).fetchall()]
+        
+        return render_template(
+            "admin/email-monitor.html",
+            stats=stats,
+            recent_emails=recent_emails
+        )
+
+@app.route("/admin/email-monitor/trigger", methods=["POST"])
+@admin_required
+def trigger_emails():
+    """Manually trigger email processing."""
+    success, message = trigger_email_processing()
+    return jsonify({
+        "success": success,
+        "message": message
+    }), 200 if success else 500
+
+@app.route("/logout")
+def logout():
+    """Handle user logout."""
+    # Clear session data
+    session.clear()
+    return redirect(url_for('hello_world'))
 
 if __name__ == "__main__":
     port = int(os.environ.get('PORT', 10000))
