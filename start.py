@@ -1,7 +1,6 @@
 import os
 
 #os.environ['FLASK_ENV'] = 'test'
-from flask_debugtoolbar import DebugToolbarExtension
 from flask import Flask, render_template, jsonify, request, redirect, url_for, session
 import requests
 from database import load_students_from_db, load_student_from_db, add_student_to_db, verify_user_credentials
@@ -11,9 +10,7 @@ from datetime import datetime, timedelta
 from functools import wraps
 
 app = Flask(__name__)
-app.debug = True
 app.secret_key = os.urandom(24)
-toolbar = DebugToolbarExtension(app)
 JWT_SECRET = os.urandom(24)  # In production, use a stable secret key
 
 def token_required(f):
@@ -87,23 +84,28 @@ def sign_up_page():
     if request.method == "POST":
         data = request.form.to_dict()
         signedin = add_student_to_db(data)
-        print("Signed-in Data:", signedin)  # Debugging line
-        session['signedin'] = signedin  # Store data in session
-        return redirect(url_for('signed_up_page'))
+        
+        if signedin is None:
+            # Email already exists, return form with data and error
+            return render_template("account/signup.html", 
+                                error="This email is already registered. Please use a different email or login to your existing account.",
+                                form_data=data)
+        
+        session['signedin'] = signedin
+        return redirect(url_for('registration_success'))
     return render_template("account/signup.html")
 
 @app.route("/login")
 def login():
     return render_template("account/login.html")
-@app.route("/signedup")
-def signed_up_page():
+@app.route("/registration-success")
+def registration_success():
     signedin = session.get('signedin')
     print("Retrieved Signed-in Data:", signedin)  # Debugging line
     if not signedin:
         # Handle the case where signedin is not available
         return "Error: No user data available", 400
-    return render_template("signedup.html", signedin=signedin)
-    return render_template("signedup.html", signedin=signedin)
+    return render_template("account/registration-success.html", signedin=signedin)
 
 ## LinkedIn Login Begin ##
 

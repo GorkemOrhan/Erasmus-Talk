@@ -3,6 +3,7 @@
 {% block title %}Sign Up - ErasmusTalk{% endblock %}
 
 {% block styles %}
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
 <style>
     body {
         background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
@@ -83,6 +84,28 @@
         color: #2e59d9;
         text-decoration: underline;
     }
+
+    /* Autocomplete Styles */
+    .ui-autocomplete {
+        max-height: 200px;
+        overflow-y: auto;
+        overflow-x: hidden;
+        border-radius: 10px;
+        border: 1px solid rgba(0,0,0,0.1);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .ui-menu-item {
+        padding: 8px 12px;
+        font-size: 14px;
+    }
+
+    .ui-state-active {
+        background: #4e73df !important;
+        border: none !important;
+        color: white !important;
+        margin: 0 !important;
+    }
 </style>
 {% endblock %}
 
@@ -95,24 +118,36 @@
                     <h1 class="h3 text-gray-900">Join ErasmusTalk</h1>
                     <p class="text-muted">Connect with fellow Erasmus students worldwide</p>
                 </div>
+                {% if error %}
+                <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+                    {{ error }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                {% endif %}
                 <form method="POST" action="{{ url_for('sign_up_page') }}" class="needs-validation" novalidate>
                     <div class="form-group">
                         <label for="name" class="fw-bold">Name</label>
-                        <input type="text" class="form-control" id="name" name="name" placeholder="Enter your name" required pattern="[A-Za-z ]{2,50}">
+                        <input type="text" class="form-control" id="name" name="name" 
+                               value="{{ form_data.name if form_data else '' }}"
+                               placeholder="Enter your name" required pattern="[A-Za-z ]{2,50}">
                         <div class="invalid-feedback">
                             Please enter a valid name (2-50 characters, letters only).
                         </div>
                     </div>
                     <div class="form-group">
                         <label for="surname" class="fw-bold">Surname</label>
-                        <input type="text" class="form-control" id="surname" name="surname" placeholder="Enter your surname" required pattern="[A-Za-z ]{2,50}">
+                        <input type="text" class="form-control" id="surname" name="surname" 
+                               value="{{ form_data.surname if form_data else '' }}"
+                               placeholder="Enter your surname" required pattern="[A-Za-z ]{2,50}">
                         <div class="invalid-feedback">
                             Please enter a valid surname (2-50 characters, letters only).
                         </div>
                     </div>
                     <div class="form-group">
                         <label for="email" class="fw-bold">Email</label>
-                        <input type="email" class="form-control" id="email" name="email" placeholder="Enter your email" required>
+                        <input type="email" class="form-control" id="email" name="email" 
+                               value="{{ form_data.email if form_data else '' }}"
+                               placeholder="Enter your email" required>
                         <div class="invalid-feedback">
                             Please enter a valid email address.
                         </div>
@@ -120,18 +155,21 @@
                     <div class="form-group">
                         <label for="password" class="fw-bold">Password</label>
                         <input type="password" class="form-control" id="password" name="password" 
-                            placeholder="Enter your password" 
-                            required 
-                            minlength="8"
-                            maxlength="50"
-                            pattern="^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*#?&]{8,50}$">
+                               value="{{ form_data.password if form_data else '' }}"
+                               placeholder="Enter your password" 
+                               required 
+                               minlength="8"
+                               maxlength="50"
+                               pattern="^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*#?&]{8,50}$">
                         <div class="invalid-feedback">
                             Password must be 8-50 characters and include at least one letter and one number.
                         </div>
                     </div>
                     <div class="form-group">
                         <label for="department" class="fw-bold">Department</label>
-                        <input type="text" class="form-control" id="department" name="department" placeholder="Enter your department" required>
+                        <input type="text" class="form-control" id="department" name="department" 
+                               value="{{ form_data.department if form_data else '' }}"
+                               placeholder="Enter your department" required>
                         <div class="invalid-feedback">
                             Please enter your department.
                         </div>
@@ -141,14 +179,18 @@
                         <div class="row">
                             <div class="col-md-6 mb-2 mb-md-0">
                                 <input type="text" class="form-control" id="country_selector" name="country" 
+                                       value="{{ form_data.country if form_data else '' }}"
                                        placeholder="Select country..." required>
                                 <div class="invalid-feedback">
                                     Please select a country.
                                 </div>
                             </div>
                             <div class="col-md-6">
-                                <select class="form-select form-control" id="going_to" name="going_to" required disabled>
+                                <select class="form-select form-control" id="going_to" name="going_to" required>
                                     <option value="">Select university...</option>
+                                    {% if form_data and form_data.going_to %}
+                                    <option value="{{ form_data.going_to }}" selected>{{ form_data.going_to }}</option>
+                                    {% endif %}
                                 </select>
                                 <div class="invalid-feedback">
                                     Please select a university.
@@ -178,4 +220,92 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+<script>
+const countries = [
+    "Afghanistan", "Albania", "Algeria", "Andorra", "Angola", "Antigua and Barbuda", "Argentina", "Armenia", "Australia", "Austria",
+    "Azerbaijan", "Bahamas", "Bahrain", "Bangladesh", "Barbados", "Belarus", "Belgium", "Belize", "Benin", "Bhutan",
+    "Bolivia", "Bosnia and Herzegovina", "Botswana", "Brazil", "Brunei", "Bulgaria", "Burkina Faso", "Burundi", "Cabo Verde",
+    "Cambodia", "Cameroon", "Canada", "Central African Republic", "Chad", "Chile", "China", "Colombia", "Comoros",
+    "Congo", "Costa Rica", "Croatia", "Cuba", "Cyprus", "Czech Republic", "Denmark", "Djibouti", "Dominica",
+    "Dominican Republic", "Ecuador", "Egypt", "El Salvador", "Equatorial Guinea", "Eritrea", "Estonia", "Eswatini",
+    "Ethiopia", "Fiji", "Finland", "France", "Gabon", "Gambia", "Georgia", "Germany", "Ghana", "Greece", "Grenada",
+    "Guatemala", "Guinea", "Guinea-Bissau", "Guyana", "Haiti", "Honduras", "Hungary", "Iceland", "India", "Indonesia",
+    "Iran", "Iraq", "Ireland", "Israel", "Italy", "Jamaica", "Japan", "Jordan", "Kazakhstan", "Kenya", "Kiribati",
+    "Korea, North", "Korea, South", "Kosovo", "Kuwait", "Kyrgyzstan", "Laos", "Latvia", "Lebanon", "Lesotho", "Liberia",
+    "Libya", "Liechtenstein", "Lithuania", "Luxembourg", "Madagascar", "Malawi", "Malaysia", "Maldives", "Mali", "Malta",
+    "Marshall Islands", "Mauritania", "Mauritius", "Mexico", "Micronesia", "Moldova", "Monaco", "Mongolia", "Montenegro",
+    "Morocco", "Mozambique", "Myanmar", "Namibia", "Nauru", "Nepal", "Netherlands", "New Zealand", "Nicaragua", "Niger",
+    "Nigeria", "North Macedonia", "Norway", "Oman", "Pakistan", "Palau", "Palestine", "Panama", "Papua New Guinea",
+    "Paraguay", "Peru", "Philippines", "Poland", "Portugal", "Qatar", "Romania", "Russia", "Rwanda", "Saint Kitts and Nevis",
+    "Saint Lucia", "Saint Vincent and the Grenadines", "Samoa", "San Marino", "Sao Tome and Principe", "Saudi Arabia",
+    "Senegal", "Serbia", "Seychelles", "Sierra Leone", "Singapore", "Slovakia", "Slovenia", "Solomon Islands", "Somalia",
+    "South Africa", "South Sudan", "Spain", "Sri Lanka", "Sudan", "Suriname", "Sweden", "Switzerland", "Syria", "Taiwan",
+    "Tajikistan", "Tanzania", "Thailand", "Timor-Leste", "Togo", "Tonga", "Trinidad and Tobago", "Tunisia", "Turkey",
+    "Turkmenistan", "Tuvalu", "Uganda", "Ukraine", "United Arab Emirates", "United Kingdom", "United States", "Uruguay",
+    "Uzbekistan", "Vanuatu", "Vatican City", "Venezuela", "Vietnam", "Yemen", "Zambia", "Zimbabwe"
+];
+
+$(document).ready(function() {
+    // Initialize jQuery UI Autocomplete
+    $("#country_selector").autocomplete({
+        source: function(request, response) {
+            var term = request.term.toLowerCase();
+            var matches = countries.filter(country => 
+                country.toLowerCase().includes(term)
+            );
+            response(matches);
+        },
+        minLength: 1,
+        select: function(event, ui) {
+            const selectedCountry = ui.item.value;
+            const universitySelect = document.getElementById('going_to');
+            
+            if (selectedCountry) {
+                universitySelect.disabled = false;
+                // Fetch universities for the selected country
+                fetch(`http://universities.hipolabs.com/search?country=${encodeURIComponent(selectedCountry)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        // Clear existing options
+                        universitySelect.innerHTML = '<option value="">Select university...</option>';
+                        
+                        // Add universities to dropdown
+                        data.forEach(uni => {
+                            const option = document.createElement('option');
+                            option.value = uni.name;
+                            option.textContent = uni.name;
+                            option.dataset.website = uni.web_pages[0];
+                            universitySelect.appendChild(option);
+                        });
+                    })
+                    .catch(error => {
+                        console.error('Error fetching universities:', error);
+                        universitySelect.innerHTML = '<option value="">Error loading universities</option>';
+                    });
+            }
+        }
+    });
+
+    // Show university website when selected
+    $('#going_to').change(function() {
+        const selectedOption = this.options[this.selectedIndex];
+        const websiteUrl = selectedOption.dataset.website;
+        const infoDiv = $('#university_info');
+        const linkElement = $('#university_link');
+        
+        if (websiteUrl) {
+            linkElement.attr('href', websiteUrl);
+            linkElement.text(websiteUrl);
+            infoDiv.show();
+        } else {
+            infoDiv.hide();
+        }
+    });
+});
+</script>
 {% endblock %}
