@@ -12,6 +12,12 @@
 
     <!-- Custom styles for this template-->
     <link href="https://startbootstrap.github.io/startbootstrap-sb-admin-2/css/sb-admin-2.min.css" rel="stylesheet">
+
+    <style>
+        .dropdown-menu {
+            z-index: 1050; /* Ensure dropdown is on top */
+        }
+    </style>
 </head>
 
 <body id="page-top">
@@ -99,7 +105,7 @@
                                 <span class="mr-2 d-none d-lg-inline text-gray-600 small">{{ user.name }}</span>
                                 <img class="img-profile rounded-circle" src="https://source.unsplash.com/QAB-WJcbgJk/60x60">
                             </a>
-                            <ul class="dropdown-menu">
+                            <ul class="dropdown-menu dropdown-menu-end">
                                 <li><a class="dropdown-item" href="/admin/profile">
                                     <i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i>
                                     Profile

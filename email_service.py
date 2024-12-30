@@ -231,14 +231,19 @@ scheduler.add_job(
 )
 
 def start_scheduler():
-    """Start the email processing scheduler."""
-    if not scheduler.running:
-        scheduler.start()
+    """Start the email processing scheduler if enabled."""
+    if os.environ.get('SCHEDULER_ENABLED', 'false').lower() == 'true':
+        if not scheduler.running:
+            scheduler.start()
 
 def stop_scheduler():
     """Stop the email processing scheduler."""
     if scheduler.running:
         scheduler.shutdown()
+
+# Ensure the scheduler is stopped if not enabled
+if os.environ.get('SCHEDULER_ENABLED', 'false').lower() != 'true':
+    stop_scheduler()
 
 def trigger_email_processing():
     """Manually trigger email processing."""
