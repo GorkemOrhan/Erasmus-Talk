@@ -132,6 +132,13 @@
 
 {% block scripts %}
 <script>
+// Check if user is already logged in
+const token = localStorage.getItem('token');
+const user = JSON.parse(localStorage.getItem('user') || '{}');
+if (token && user) {
+    window.location.href = '/';
+}
+
 document.getElementById('loginForm').addEventListener('submit', async function(e) {
     e.preventDefault();
     

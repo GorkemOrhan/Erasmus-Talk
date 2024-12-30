@@ -40,14 +40,14 @@
                     <!-- User menu for logged in users -->
                     <div id="user-menu" class="d-none">
                         <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
+                            <button class="nav-link dropdown-toggle btn btn-link" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
                                 <span id="username"></span>
-                            </a>
-                            <ul class="dropdown-menu dropdown-menu-end">
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end shadow" style="position: absolute; z-index: 1050;">
                                 <li><a class="dropdown-item" href="/profile">Profile</a></li>
                                 <li><a class="dropdown-item" href="/settings">Settings</a></li>
                                 <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item" href="#" id="logout">Logout</a></li>
+                                <li><a class="dropdown-item" href="/logout" id="logout">Logout</a></li>
                             </ul>
                         </li>
                     </div>
@@ -86,44 +86,82 @@
             background-color: #2e59d9;
             border-color: #2e59d9;
         }
-    </style>
-    <script>
-        // Only run auth check on non-auth pages
-        if (!window.location.pathname.startsWith('/login') && !window.location.pathname.startsWith('/signup')) {
-            // Check authentication status on page load
-            document.addEventListener('DOMContentLoaded', function() {
-                checkAuthStatus();
-            });
-
-            // Listen for login event
-            window.addEventListener('user-logged-in', checkAuthStatus);
-
-            function checkAuthStatus() {
-                const token = localStorage.getItem('token');
-                const user = JSON.parse(localStorage.getItem('user') || '{}');
-                const authButtons = document.getElementById('auth-buttons');
-                const userMenu = document.getElementById('user-menu');
-                const usernameElement = document.getElementById('username');
-
-                if (token && user) {
-                    // User is logged in
-                    authButtons.classList.add('d-none');
-                    userMenu.classList.remove('d-none');
-                    usernameElement.textContent = user.name || user.email;
-                } else {
-                    // User is logged out
-                    authButtons.classList.remove('d-none');
-                    userMenu.classList.add('d-none');
-                }
-            }
-
-            // Handle logout
-            document.getElementById('logout').addEventListener('click', function(e) {
-                e.preventDefault();
-                localStorage.removeItem('token');
-                localStorage.removeItem('user');
-                window.location.href = '/';
-            });
+        .dropdown-menu {
+            margin-top: 0.5rem;
+            min-width: 10rem;
+            padding: 0.5rem 0;
+            background-color: #fff;
+            border: 1px solid rgba(0, 0, 0, 0.15);
+            border-radius: 0.25rem;
         }
+        .dropdown-item {
+            padding: 0.5rem 1.5rem;
+            font-weight: 500;
+        }
+        .dropdown-item:hover {
+            background-color: #f8f9fa;
+            color: #4e73df;
+        }
+        .dropdown-item:active {
+            background-color: #4e73df;
+            color: white;
+        }
+        .btn-link {
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+        }
+        .btn-link:hover {
+            color: #4e73df;
+        }
+    </style>
+    <!-- Required Bootstrap JS files -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize Bootstrap dropdown
+            var dropdownElementList = document.querySelectorAll('.dropdown-toggle');
+            dropdownElementList.forEach(function(dropdownToggleEl) {
+                new bootstrap.Dropdown(dropdownToggleEl, {
+                    offset: [0, 10],
+                    boundary: 'viewport'
+                });
+            });
+
+            // Check authentication status
+            if (!window.location.pathname.startsWith('/login') && !window.location.pathname.startsWith('/signup')) {
+                checkAuthStatus();
+                
+                // Listen for login event
+                window.addEventListener('user-logged-in', checkAuthStatus);
+            }
+        });
+
+        function checkAuthStatus() {
+            const token = localStorage.getItem('token');
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            const authButtons = document.getElementById('auth-buttons');
+            const userMenu = document.getElementById('user-menu');
+            const usernameElement = document.getElementById('username');
+
+            if (token && user) {
+                // User is logged in
+                authButtons.classList.add('d-none');
+                userMenu.classList.remove('d-none');
+                usernameElement.textContent = user.name || user.email;
+            } else {
+                // User is logged out
+                authButtons.classList.remove('d-none');
+                userMenu.classList.add('d-none');
+            }
+        }
+
+        // Handle logout
+        document.getElementById('logout')?.addEventListener('click', function(e) {
+            e.preventDefault();
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = '/logout';
+        });
     </script>
 </header> 
