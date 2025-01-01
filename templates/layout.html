@@ -12,7 +12,9 @@
     
     {% block content %}{% endblock %}
     
-    {% include "footer.html" %}
+    {% if not request.path.startswith('/login') and not request.path.startswith('/signup') and not request.path.startswith('/forgot-password') %}
+        {% include "footer.html" %}
+    {% endif %}
     
     {% block scripts %}{% endblock %}
 </body>

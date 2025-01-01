@@ -34,13 +34,13 @@ class StudentRepository(BaseRepository):
                 LEFT JOIN roles r ON ur.role_id = r.id 
                 GROUP BY u.id, s.department, s.going_to
             """))
-            students = []
-            for row in result.all():
+        students = []
+        for row in result.all():
                 student = dict(row._mapping)
                 student['roles'] = student['roles'][0] if student['roles'][0] else []
                 students.append(student)
-            return students
-
+        return students
+    
     def get_by_id(self, id):
         """Get a student by ID."""
         with self.engine.connect() as conn:
@@ -57,9 +57,9 @@ class StudentRepository(BaseRepository):
                 WHERE u.id = :val 
                 GROUP BY u.id, s.department, s.going_to
             """), {"val": id})
-            row = result.fetchone()
-            if row is None:
-                return None
+        row = result.fetchone()
+        if row is None:
+            return None
             student = dict(row._mapping)
             student['roles'] = student['roles'][0] if student['roles'][0] else []
             return student
@@ -160,6 +160,78 @@ class StudentRepository(BaseRepository):
             "idempotency_key": str(uuid.uuid4())
         })
 
+    def get_paginated(self, offset=0, limit=10, search=None, sort=None, order=None):
+        """Get paginated list of students with search and sorting."""
+        with self.engine.connect() as conn:
+            # Base query
+            query = """
+                SELECT 
+                    u.id,
+                    u.name,
+                    u.surname,
+                    u.email,
+                    s.department,
+                    s.going_to,
+                    u.is_active,
+                    u.created_at
+                FROM students s
+                JOIN users u ON s.user_id = u.id
+            """
+            count_query = "SELECT COUNT(*) FROM students s JOIN users u ON s.user_id = u.id"
+            params = {}
+
+            # Add search condition if provided
+            if search:
+                search_condition = """
+                    WHERE u.name ILIKE :search 
+                    OR u.surname ILIKE :search 
+                    OR u.email ILIKE :search 
+                    OR s.department ILIKE :search
+                    OR s.going_to ILIKE :search
+                """
+                query += search_condition
+                count_query += search_condition
+                params['search'] = f'%{search}%'
+
+            # Add sorting if provided
+            if sort:
+                sort_column = {
+                    'name': 'u.name',
+                    'email': 'u.email',
+                    'department': 's.department',
+                    'going_to': 's.going_to',
+                    'status': 'u.is_active',
+                    'created_at': 'u.created_at'
+                }.get(sort, 'u.created_at')
+                
+                query += f" ORDER BY {sort_column} {order or 'ASC'}"
+
+            # Add pagination
+            query += " LIMIT :limit OFFSET :offset"
+            params.update({'limit': limit, 'offset': offset})
+
+            # Get total count
+            total = conn.execute(text(count_query), params).scalar()
+
+            # Get paginated results
+            result = conn.execute(text(query), params)
+            students = []
+            for row in result:
+                students.append({
+                    'id': row.id,
+                    'name': f"{row.name} {row.surname}",
+                    'email': row.email,
+                    'department': row.department,
+                    'going_to': row.going_to,
+                    'status': 'Active' if row.is_active else 'Pending',
+                    'created_at': row.created_at.strftime('%Y-%m-%d %H:%M:%S')
+                })
+
+            return {
+                'total': total,
+                'rows': students
+            }
+
 class UserRepository(BaseRepository):
     def check_email_exists(self, email):
         """Check if email already exists."""
@@ -198,86 +270,45 @@ class UserRepository(BaseRepository):
                         'email': user.email,
                         'name': user.name,
                         'surname': user.surname,
-                        'roles': user.roles[0] if user.roles[0] else [],
+                        'role': 'admin' if user.admin_level is not None else 'student',
                         'user_type': user.user_type
                     }
-                    
-                    # Add type-specific fields
-                    if user.user_type == 'student':
-                        user_data.update({
-                            'department': user.department,
-                            'going_to': user.going_to
-                        })
-                    elif user.user_type == 'admin':
-                        user_data.update({
-                            'admin_level': user.admin_level
-                        })
-                    
                     return user_data
             return None
 
 class DashboardRepository(BaseRepository):
     def get_stats(self):
-        """Get dashboard statistics."""
+        """Get statistics for the admin dashboard."""
         with self.engine.connect() as conn:
             # Get total students
-            total_query = text("SELECT COUNT(*) FROM students")
-            total_students = conn.execute(total_query).scalar()
+            result = conn.execute(text("SELECT COUNT(*) FROM students"))
+            total_students = result.scalar()
 
             # Get active students
-            active_query = text("""
+            result = conn.execute(text("""
                 SELECT COUNT(*) FROM students s
                 JOIN users u ON s.user_id = u.id
                 WHERE u.is_active = true
-            """)
-            active_students = conn.execute(active_query).scalar()
+            """))
+            active_students = result.scalar()
 
-            # Get monthly registrations
-            month_ago = datetime.now() - timedelta(days=30)
-            monthly_query = text("""
+            # Get total universities
+            result = conn.execute(text("SELECT COUNT(DISTINCT going_to) FROM students"))
+            total_universities = result.scalar()
+
+            # Get recent registrations (last 7 days)
+            result = conn.execute(text("""
                 SELECT COUNT(*) FROM students s
                 JOIN users u ON s.user_id = u.id
-                WHERE u.created_at >= :month_ago
-            """)
-            monthly_registrations = conn.execute(monthly_query, {"month_ago": month_ago}).scalar()
-
-            # Get recent students
-            recent_query = text("""
-                SELECT 
-                    u.*,
-                    s.department,
-                    s.going_to,
-                    array_agg(r.name) as roles 
-                FROM users u
-                JOIN students s ON u.id = s.user_id
-                LEFT JOIN user_roles ur ON u.id = ur.user_id 
-                LEFT JOIN roles r ON ur.role_id = r.id 
-                GROUP BY u.id, s.department, s.going_to
-                ORDER BY u.created_at DESC 
-                LIMIT 10
-            """)
-            recent_students = [dict(row._mapping) for row in conn.execute(recent_query).fetchall()]
-
-            # Get popular universities
-            university_query = text("""
-                SELECT going_to, COUNT(*) as count 
-                FROM students 
-                GROUP BY going_to 
-                ORDER BY count DESC 
-                LIMIT 5
-            """)
-            university_stats = conn.execute(university_query).fetchall()
-            university_labels = [row[0] for row in university_stats]
-            university_data = [row[1] for row in university_stats]
+                WHERE u.created_at >= NOW() - INTERVAL '7 days'
+            """))
+            recent_registrations = result.scalar()
 
             return {
                 'total_students': total_students,
                 'active_students': active_students,
-                'monthly_registrations': monthly_registrations,
-                'recent_students': recent_students,
-                'university_labels': university_labels,
-                'university_data': university_data,
-                'total_universities': len(set(university_labels))
+                'total_universities': total_universities,
+                'recent_registrations': recent_registrations
             }
 
 # Create repository instances
@@ -291,7 +322,7 @@ def load_students_from_db():
 
 def load_student_from_db(id):
     return student_repository.get_by_id(id)
-
+        
 def add_student_to_db(data):
     return student_repository.create(data)
 
@@ -299,6 +330,7 @@ def verify_user_credentials(email, password):
     return user_repository.verify_credentials(email, password)
 
 def get_dashboard_stats():
+    """Get statistics for the admin dashboard."""
     return dashboard_repository.get_stats()
         
 

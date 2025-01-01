@@ -128,22 +128,17 @@
         </div>
     </div>
 </div>
+{% include "auth_footer.html" %}
 {% endblock %}
 
 {% block scripts %}
 <script>
-// Check if user is already logged in
-const token = localStorage.getItem('token');
-const user = JSON.parse(localStorage.getItem('user') || '{}');
-if (token && user) {
-    window.location.href = '/';
-}
-
 document.getElementById('loginForm').addEventListener('submit', async function(e) {
     e.preventDefault();
     
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
+    const remember = document.getElementById('remember').checked;
     const errorMessage = document.getElementById('error-message');
     
     try {
@@ -154,24 +149,19 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
             },
             body: JSON.stringify({
                 email: email,
-                password: password
+                password: password,
+                remember: remember
             })
         });
         
         const data = await response.json();
         
         if (response.ok) {
-            // Store JWT token
             localStorage.setItem('token', data.token);
             localStorage.setItem('user', JSON.stringify(data.user));
-            
-            // Update UI to show user is logged in
-            window.dispatchEvent(new Event('user-logged-in'));
-            
-            // Redirect to home page
-            window.location.href = '/';
+            window.location.href = data.redirect || '/';
         } else {
-            errorMessage.textContent = data.message || 'Invalid email or password';
+            errorMessage.textContent = data.message || 'Invalid email or password.';
             errorMessage.style.display = 'block';
         }
     } catch (error) {

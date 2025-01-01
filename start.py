@@ -1,7 +1,15 @@
 import os
 from flask import Flask, render_template, jsonify, request, redirect, url_for, session
 import requests
-from database import load_students_from_db, load_student_from_db, add_student_to_db, verify_user_credentials, get_dashboard_stats
+from database import (
+    load_students_from_db, 
+    load_student_from_db, 
+    add_student_to_db, 
+    verify_user_credentials, 
+    get_dashboard_stats,
+    student_repository,
+    engine
+)
 from email_service import queue_activation_email, start_scheduler, stop_scheduler, trigger_email_processing
 import urllib.parse
 import jwt
@@ -21,8 +29,7 @@ JWT_SECRET = os.environ.get('JWT_SECRET', os.urandom(24))
 
 # Only enable debug toolbar in development
 if os.environ.get('FLASK_ENV') == 'development':
-    from flask_debugtoolbar import DebugToolbarExtension
-    toolbar = DebugToolbarExtension(app)
+    app.debug = True
 
 # Initialize scheduler flag
 scheduler_started = False
@@ -54,64 +61,40 @@ def token_required(f):
 
 def admin_required(f):
     @wraps(f)
-    def decorated(*args, **kwargs):
-        # First check session for web routes
-        if 'signedin' in session:
-            user = session['signedin']
-            if user and 'roles' in user and 'admin' in user['roles']:
-                return f(*args, **kwargs)
-        
-        # Then check Authorization header for API routes
-        token = request.headers.get('Authorization')
-        if token:
-            try:
-                token = token.split(' ')[1]  # Remove 'Bearer ' prefix
-                data = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
-                if 'admin' in data.get('roles', []):
-                    return f(*args, **kwargs)
-            except:
-                pass
-        
-        # If neither session nor token is valid, redirect to login
-        return redirect(url_for('login'))
-    return decorated
+    def decorated_function(*args, **kwargs):
+        if 'user' not in session or session['user'].get('role') != 'admin':
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated_function
 
 @app.route("/api/login", methods=["POST"])
 def login_api():
+    """Handle login API request."""
     data = request.get_json()
     email = data.get('email')
     password = data.get('password')
-    
-    if not email or not password:
-        return jsonify({"message": "Email and password are required"}), 400
-    
-    # Verify credentials from database
+    remember = data.get('remember', False)
+
     user = verify_user_credentials(email, password)
-    
     if user:
-        # Store user data in session
-        session['signedin'] = user
-        
+        session['user'] = user
+        if remember:
+            session.permanent = True
+
         # Generate JWT token
         token = jwt.encode({
             'user_id': user['id'],
             'email': user['email'],
-            'name': user['name'],
-            'roles': user['roles'],
-            'exp': datetime.utcnow() + timedelta(days=1)
-        }, JWT_SECRET, algorithm="HS256")
-        
+            'exp': datetime.utcnow() + timedelta(hours=24)
+        }, JWT_SECRET)
+
         return jsonify({
-            "token": token,
-            "user": {
-                "id": user['id'],
-                "email": user['email'],
-                "name": user['name'],
-                "roles": user['roles']
-            }
-        }), 200
+            'token': token,
+            'user': user,
+            'redirect': '/admin/dashboard' if user.get('role') == 'admin' else '/'
+        })
     else:
-        return jsonify({"message": "Invalid email or password"}), 401
+        return jsonify({'message': 'Invalid email or password'}), 401
 
 @app.route("/")
 def hello_world():
@@ -134,6 +117,10 @@ def show_student(id):
 
 @app.route("/signup", methods=["GET", "POST"])
 def sign_up_page():
+    # Check if user is already logged in
+    if 'user' in session:
+        return redirect(url_for('admin_dashboard') if session['user'].get('role') == 'admin' else url_for('hello_world'))
+    
     if request.method == "POST":
         data = request.form.to_dict()
         # Generate activation token
@@ -153,8 +140,8 @@ def sign_up_page():
 @app.route("/login")
 def login():
     # Check if user is already logged in
-    if 'signedin' in session:
-        return redirect(url_for('hello_world'))
+    if 'user' in session:
+        return redirect(url_for('admin_dashboard') if session['user'].get('role') == 'admin' else url_for('hello_world'))
     return render_template("account/login.html")
 
 @app.route("/registration-success")
@@ -197,17 +184,18 @@ def activate_account(token):
 def forgot_password():
     return render_template("account/forgot-password.html")
 
-@app.route("/admin")
+@app.route("/admin/dashboard")
 @admin_required
 def admin_dashboard():
+    """Admin dashboard page."""
     stats = get_dashboard_stats()
-    return render_template("admin/dashboard.html", **stats)
+    return render_template('admin/dashboard.html', stats=stats, user=session.get('user', {}))
 
 @app.route("/admin/students")
 @admin_required
 def admin_students():
-    students = load_students_from_db()
-    return render_template("admin/students.html", students=students)
+    """Admin students page."""
+    return render_template("admin/students.html", user=session.get('user', {}))
 
 @app.route("/admin/universities")
 @admin_required
@@ -284,6 +272,50 @@ def logout():
     # Clear session data
     session.clear()
     return redirect(url_for('hello_world'))
+
+@app.route("/api/admin/students/<int:id>", methods=["DELETE"])
+@admin_required
+def delete_student(id):
+    """Delete a student."""
+    with engine.connect() as conn:
+        # Begin transaction
+        trans = conn.begin()
+        try:
+            # Delete student record
+            query = text("""
+                DELETE FROM students WHERE user_id = (
+                    SELECT id FROM users WHERE id = :id
+                )
+            """)
+            conn.execute(query, {"id": id})
+            
+            # Delete user record
+            query = text("DELETE FROM users WHERE id = :id")
+            conn.execute(query, {"id": id})
+            
+            trans.commit()
+            return jsonify({"success": True})
+        except:
+            trans.rollback()
+            return jsonify({"success": False, "message": "Failed to delete student"}), 500
+
+@app.route("/api/admin/students")
+@admin_required
+def admin_students_api():
+    """API endpoint for student list with pagination."""
+    offset = request.args.get('offset', type=int, default=0)
+    limit = request.args.get('limit', type=int, default=10)
+    search = request.args.get('search', type=str)
+    sort = request.args.get('sort', type=str)
+    order = request.args.get('order', type=str)
+    
+    return jsonify(student_repository.get_paginated(
+        offset=offset,
+        limit=limit,
+        search=search,
+        sort=sort,
+        order=order
+    ))
 
 if __name__ == "__main__":
     port = int(os.environ.get('PORT', 10000))

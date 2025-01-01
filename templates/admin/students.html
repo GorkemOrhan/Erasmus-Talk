@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>ErasmusTalk Admin - Dashboard</title>
+    <title>ErasmusTalk Admin - Students</title>
 
     <!-- Custom fonts for this template-->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
@@ -13,9 +13,19 @@
     <!-- Custom styles for this template-->
     <link href="https://startbootstrap.github.io/startbootstrap-sb-admin-2/css/sb-admin-2.min.css" rel="stylesheet">
 
+    <!-- Bootstrap Table -->
+    <link href="https://unpkg.com/bootstrap-table@1.22.3/dist/bootstrap-table.min.css" rel="stylesheet">
+
     <style>
         .dropdown-menu {
-            z-index: 1050; /* Ensure dropdown is on top */
+            z-index: 1050;
+        }
+        .table-actions {
+            white-space: nowrap;
+        }
+        .table-actions .btn {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem;
         }
     </style>
 </head>
@@ -37,8 +47,8 @@
             <hr class="sidebar-divider my-0">
 
             <!-- Nav Item - Dashboard -->
-            <li class="nav-item active">
-                <a class="nav-link" href="/admin">
+            <li class="nav-item">
+                <a class="nav-link" href="/admin/dashboard">
                     <i class="fas fa-fw fa-tachometer-alt"></i>
                     <span>Dashboard</span>
                 </a>
@@ -53,7 +63,7 @@
             </div>
 
             <!-- Nav Item - Students -->
-            <li class="nav-item">
+            <li class="nav-item active">
                 <a class="nav-link" href="/admin/students">
                     <i class="fas fa-fw fa-users"></i>
                     <span>Students</span>
@@ -124,82 +134,43 @@
                 <!-- Begin Page Content -->
                 <div class="container-fluid">
                     <!-- Page Heading -->
-                    <div class="d-sm-flex align-items-center justify-content-between mb-4">
-                        <h1 class="h3 mb-0 text-gray-800">Dashboard</h1>
-                    </div>
+                    <h1 class="h3 mb-2 text-gray-800">Students</h1>
+                    <p class="mb-4">Manage all student accounts here.</p>
 
-                    <!-- Content Row -->
-                    <div class="row">
-                        <!-- Total Students Card -->
-                        <div class="col-xl-3 col-md-6 mb-4">
-                            <div class="card border-left-primary shadow h-100 py-2">
-                                <div class="card-body">
-                                    <div class="row no-gutters align-items-center">
-                                        <div class="col mr-2">
-                                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                                                Total Students</div>
-                                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.total_students }}</div>
-                                        </div>
-                                        <div class="col-auto">
-                                            <i class="fas fa-users fa-2x text-gray-300"></i>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                    <!-- Students Table -->
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">Student List</h6>
                         </div>
-
-                        <!-- Active Students Card -->
-                        <div class="col-xl-3 col-md-6 mb-4">
-                            <div class="card border-left-success shadow h-100 py-2">
-                                <div class="card-body">
-                                    <div class="row no-gutters align-items-center">
-                                        <div class="col mr-2">
-                                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                                                Active Students</div>
-                                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.active_students }}</div>
-                                        </div>
-                                        <div class="col-auto">
-                                            <i class="fas fa-user-check fa-2x text-gray-300"></i>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Universities Card -->
-                        <div class="col-xl-3 col-md-6 mb-4">
-                            <div class="card border-left-info shadow h-100 py-2">
-                                <div class="card-body">
-                                    <div class="row no-gutters align-items-center">
-                                        <div class="col mr-2">
-                                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
-                                                Universities</div>
-                                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.total_universities }}</div>
-                                        </div>
-                                        <div class="col-auto">
-                                            <i class="fas fa-university fa-2x text-gray-300"></i>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Recent Registrations Card -->
-                        <div class="col-xl-3 col-md-6 mb-4">
-                            <div class="card border-left-warning shadow h-100 py-2">
-                                <div class="card-body">
-                                    <div class="row no-gutters align-items-center">
-                                        <div class="col mr-2">
-                                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
-                                                Recent Registrations</div>
-                                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.recent_registrations }}</div>
-                                        </div>
-                                        <div class="col-auto">
-                                            <i class="fas fa-user-plus fa-2x text-gray-300"></i>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                        <div class="card-body">
+                            <table 
+                                id="studentsTable"
+                                data-toggle="table"
+                                data-url="/api/admin/students"
+                                data-pagination="true"
+                                data-search="true"
+                                data-side-pagination="server"
+                                data-sort-name="created_at"
+                                data-sort-order="desc"
+                                data-page-list="[10, 25, 50, 100]"
+                                data-show-refresh="true"
+                                data-show-columns="true"
+                                data-minimum-count-columns="2"
+                                data-show-pagination-switch="true"
+                                data-toolbar="#toolbar"
+                                data-classes="table table-bordered table-hover">
+                                <thead>
+                                    <tr>
+                                        <th data-field="name" data-sortable="true">Name</th>
+                                        <th data-field="email" data-sortable="true">Email</th>
+                                        <th data-field="department" data-sortable="true">Department</th>
+                                        <th data-field="going_to" data-sortable="true">Going To</th>
+                                        <th data-field="status" data-sortable="true">Status</th>
+                                        <th data-field="created_at" data-sortable="true">Created At</th>
+                                        <th data-field="operate" data-formatter="operateFormatter" data-events="operateEvents" class="table-actions">Actions</th>
+                                    </tr>
+                                </thead>
+                            </table>
                         </div>
                     </div>
                 </div>
@@ -235,5 +206,49 @@
 
     <!-- Custom scripts for all pages-->
     <script src="https://startbootstrap.github.io/startbootstrap-sb-admin-2/js/sb-admin-2.min.js"></script>
+
+    <!-- Bootstrap Table -->
+    <script src="https://unpkg.com/bootstrap-table@1.22.3/dist/bootstrap-table.min.js"></script>
+
+    <script>
+        function operateFormatter(value, row, index) {
+            return [
+                '<div class="btn-group">',
+                '<button class="btn btn-primary btn-sm view" title="View">',
+                '<i class="fas fa-eye"></i>',
+                '</button>',
+                '<button class="btn btn-warning btn-sm edit" title="Edit">',
+                '<i class="fas fa-edit"></i>',
+                '</button>',
+                '<button class="btn btn-danger btn-sm remove" title="Remove">',
+                '<i class="fas fa-trash"></i>',
+                '</button>',
+                '</div>'
+            ].join('')
+        }
+
+        window.operateEvents = {
+            'click .view': function (e, value, row, index) {
+                // Handle view action
+                window.location.href = `/admin/students/${row.id}`
+            },
+            'click .edit': function (e, value, row, index) {
+                // Handle edit action
+                window.location.href = `/admin/students/${row.id}/edit`
+            },
+            'click .remove': function (e, value, row, index) {
+                if (confirm('Are you sure you want to delete this student?')) {
+                    // Handle delete action
+                    fetch(`/api/admin/students/${row.id}`, {
+                        method: 'DELETE'
+                    }).then(response => {
+                        if (response.ok) {
+                            $('#studentsTable').bootstrapTable('refresh')
+                        }
+                    })
+                }
+            }
+        }
+    </script>
 </body>
 </html> 
