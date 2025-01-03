@@ -1,12 +1,14 @@
 from sqlalchemy import text
 import uuid
 import json
+import os
 
 class EmailRepository:
     """Repository for email-related database operations."""
     
     def __init__(self, engine):
         self.engine = engine
+        self.app_url = os.environ.get('APP_URL', 'http://localhost:5000')
     
     def get_pending_emails(self, limit: int = 10):
         """Get pending emails that need to be sent."""
@@ -75,7 +77,7 @@ class EmailRepository:
                 return False
             
             # Queue activation email
-            activation_url = f"http://localhost:5000/activate/{user.activation_token}"
+            activation_url = f"{self.app_url}/activate/{user.activation_token}"
             template_data = {
                 "name": user.name,
                 "activation_url": activation_url

@@ -19,6 +19,8 @@ from dotenv import load_dotenv
 import secrets
 from sqlalchemy.sql import text
 import atexit
+import uuid
+import json
 
 # Load environment variables
 load_dotenv()
@@ -71,30 +73,30 @@ def admin_required(f):
 def login_api():
     """Handle login API request."""
     data = request.get_json()
-    email = data.get('email')
-    password = data.get('password')
-    remember = data.get('remember', False)
+    email = data.get("email")
+    password = data.get("password")
 
+    # Verify credentials
     user = verify_user_credentials(email, password)
-    if user:
-        session['user'] = user
-        if remember:
-            session.permanent = True
+    if not user:
+        return jsonify({"error": "Invalid email or password"}), 401
 
-        # Generate JWT token
-        token = jwt.encode({
-            'user_id': user['id'],
-            'email': user['email'],
-            'exp': datetime.utcnow() + timedelta(hours=24)
-        }, JWT_SECRET)
+    # Check if account is activated
+    if not user.get('is_active'):
+        return jsonify({"error": "Please activate your account first. Check your email for the activation link."}), 401
 
-        return jsonify({
-            'token': token,
-            'user': user,
-            'redirect': '/admin/dashboard' if user.get('role') == 'admin' else '/'
-        })
-    else:
-        return jsonify({'message': 'Invalid email or password'}), 401
+    # Generate token
+    token = generate_token(user)
+    
+    # Store user info in session
+    session['user'] = user
+    session['token'] = token
+
+    return jsonify({
+        'token': token,
+        'user': user,
+        'redirect': '/admin/dashboard' if user.get('role') == 'admin' else '/'
+    })
 
 @app.route("/")
 def hello_world():
@@ -155,34 +157,146 @@ def registration_success():
 
 @app.route("/activate/<token>")
 def activate_account(token):
-    """Activate a user account."""
+    """Handle account activation."""
     with engine.connect() as conn:
-        # Begin transaction
-        trans = conn.begin()
-        try:
-            # Find and activate user
-            query = text("""
-                UPDATE users
-                SET is_active = true, activation_token = NULL
-                WHERE activation_token = :token
-                RETURNING id
-            """)
-            result = conn.execute(query, {"token": token})
-            user_id = result.scalar()
-            
-            if not user_id:
-                trans.rollback()
-                return "Invalid or expired activation token", 400
-            
-            trans.commit()
-            return redirect(url_for('login'))
-        except:
-            trans.rollback()
-            raise
+        # Update user status
+        query = text("""
+            UPDATE users 
+            SET is_active = true 
+            WHERE activation_token = :token 
+            RETURNING id
+        """)
+        result = conn.execute(query, {"token": token}).fetchone()
+        
+        if result:
+            # Redirect to login with success message
+            return redirect(url_for('login', activation_success=True))
+        else:
+            # Invalid or expired token
+            return redirect(url_for('login', activation_error=True))
 
 @app.route("/forgot-password", methods=["GET", "POST"])
 def forgot_password():
+    """Handle forgot password request."""
+    if request.method == "POST":
+        email = request.form.get("email")
+        
+        with engine.connect() as conn:
+            # Check if user exists
+            query = text("SELECT id, name, email FROM users WHERE email = :email")
+            user = conn.execute(query, {"email": email}).fetchone()
+            
+            if user:
+                # Generate reset token
+                token = secrets.token_urlsafe(32)
+                expires_at = datetime.utcnow() + timedelta(hours=1)
+                
+                # Store reset token
+                token_query = text("""
+                    INSERT INTO password_reset_tokens (user_id, token, expires_at)
+                    VALUES (:user_id, :token, :expires_at)
+                """)
+                conn.execute(token_query, {
+                    "user_id": user.id,
+                    "token": token,
+                    "expires_at": expires_at
+                })
+                
+                # Queue password reset email
+                reset_url = f"{request.host_url.rstrip('/')}/reset-password/{token}"
+                template_data = {
+                    "name": user.name,
+                    "reset_url": reset_url
+                }
+                
+                email_query = text("""
+                    INSERT INTO pending_mails (
+                        template_id, recipient_email, recipient_name,
+                        template_data, status, idempotency_key
+                    )
+                    VALUES (
+                        (SELECT id FROM mail_templates WHERE name = 'password_reset'),
+                        :recipient_email, :recipient_name,
+                        :template_data, 'pending', :idempotency_key
+                    )
+                """)
+                
+                conn.execute(email_query, {
+                    "recipient_email": user.email,
+                    "recipient_name": user.name,
+                    "template_data": json.dumps(template_data),
+                    "idempotency_key": str(uuid.uuid4())
+                })
+                
+                conn.commit()
+            
+            # Always show success message to prevent email enumeration
+            return render_template(
+                "account/forgot-password.html",
+                success=True
+            )
+    
     return render_template("account/forgot-password.html")
+
+@app.route("/reset-password/<token>", methods=["GET", "POST"])
+def reset_password(token):
+    """Handle password reset."""
+    with engine.connect() as conn:
+        # Check if token is valid and not expired
+        query = text("""
+            SELECT prt.user_id, u.email
+            FROM password_reset_tokens prt
+            JOIN users u ON u.id = prt.user_id
+            WHERE prt.token = :token
+            AND prt.expires_at > NOW()
+            AND prt.used = FALSE
+        """)
+        result = conn.execute(query, {"token": token}).fetchone()
+        
+        if not result:
+            return render_template(
+                "account/reset-password.html",
+                error="Invalid or expired reset link. Please request a new one."
+            )
+        
+        if request.method == "POST":
+            password = request.form.get("password")
+            confirm_password = request.form.get("confirm_password")
+            
+            if not password or not confirm_password:
+                return render_template(
+                    "account/reset-password.html",
+                    error="Please fill in all fields."
+                )
+            
+            if password != confirm_password:
+                return render_template(
+                    "account/reset-password.html",
+                    error="Passwords do not match."
+                )
+            
+            # Update password and mark token as used
+            update_query = text("""
+                UPDATE users SET password = crypt(:password, gen_salt('bf'))
+                WHERE id = :user_id
+            """)
+            conn.execute(update_query, {
+                "password": password,
+                "user_id": result.user_id
+            })
+            
+            mark_used_query = text("""
+                UPDATE password_reset_tokens
+                SET used = TRUE
+                WHERE token = :token
+            """)
+            conn.execute(mark_used_query, {"token": token})
+            
+            conn.commit()
+            
+            return redirect(url_for('login', password_reset_success=True))
+        
+        return render_template("account/reset-password.html", token=token)
 
 @app.route("/admin/dashboard")
 @admin_required
