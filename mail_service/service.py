@@ -1,6 +1,17 @@
+import os
 from jinja2 import Template
 from .provider import EmailProvider
 from .repository import EmailRepository
+from .elastic_email import ElasticEmailProvider
+
+def get_email_provider():
+    """Get the configured email provider."""
+    provider = os.getenv('EMAIL_PROVIDER', 'elastic_email').lower()
+    
+    if provider == 'elastic_email':
+        return ElasticEmailProvider()
+    else:
+        raise ValueError(f"Unsupported email provider: {provider}")
 
 class EmailService:
     """Service for handling email operations."""

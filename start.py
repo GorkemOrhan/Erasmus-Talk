@@ -69,6 +69,16 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+def generate_token(user):
+    """Generate JWT token for user."""
+    payload = {
+        'user_id': user['id'],
+        'email': user['email'],
+        'role': user.get('role', 'student'),
+        'exp': datetime.utcnow() + timedelta(days=1)
+    }
+    return jwt.encode(payload, JWT_SECRET, algorithm="HS256")
+
 @app.route("/api/login", methods=["POST"])
 def login_api():
     """Handle login API request."""

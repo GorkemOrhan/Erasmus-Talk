@@ -79,27 +79,15 @@ sql_statements = [
     # Enable pgcrypto extension
     "CREATE EXTENSION IF NOT EXISTS pgcrypto",
     
-    # Drop tables
-    "DROP TABLE IF EXISTS public.mail_logs CASCADE",
-    "DROP TABLE IF EXISTS public.pending_mails CASCADE",
-    "DROP TABLE IF EXISTS public.mail_templates CASCADE",
-    "DROP TABLE IF EXISTS public.password_reset_tokens CASCADE",
-    "DROP TABLE IF EXISTS public.profiles CASCADE",
-    "DROP TABLE IF EXISTS public.user_roles CASCADE",
-    "DROP TABLE IF EXISTS public.admins CASCADE",
-    "DROP TABLE IF EXISTS public.students CASCADE",
-    "DROP TABLE IF EXISTS public.users CASCADE",
-    "DROP TABLE IF EXISTS public.roles CASCADE",
-    
     # Create tables
-    """CREATE TABLE public.roles (
+    """CREATE TABLE IF NOT EXISTS public.roles (
         id SERIAL PRIMARY KEY,
         name VARCHAR(50) NOT NULL UNIQUE,
         description TEXT,
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
     )""",
     
-    """CREATE TABLE public.users (
+    """CREATE TABLE IF NOT EXISTS public.users (
         id SERIAL PRIMARY KEY,
         name VARCHAR(100) NOT NULL,
         surname VARCHAR(100) NOT NULL,
@@ -111,25 +99,25 @@ sql_statements = [
         user_type VARCHAR(20) NOT NULL
     )""",
     
-    """CREATE TABLE public.students (
+    """CREATE TABLE IF NOT EXISTS public.students (
         user_id INTEGER PRIMARY KEY REFERENCES public.users(id) ON DELETE CASCADE,
         department VARCHAR(100) NOT NULL,
         going_to VARCHAR(255) NOT NULL
     )""",
     
-    """CREATE TABLE public.admins (
+    """CREATE TABLE IF NOT EXISTS public.admins (
         user_id INTEGER PRIMARY KEY REFERENCES public.users(id) ON DELETE CASCADE,
         admin_level INTEGER DEFAULT 1
     )""",
     
-    """CREATE TABLE public.user_roles (
+    """CREATE TABLE IF NOT EXISTS public.user_roles (
         user_id INTEGER REFERENCES public.users(id) ON DELETE CASCADE,
         role_id INTEGER REFERENCES public.roles(id) ON DELETE CASCADE,
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
         PRIMARY KEY (user_id, role_id)
     )""",
     
-    """CREATE TABLE public.profiles (
+    """CREATE TABLE IF NOT EXISTS public.profiles (
         id SERIAL PRIMARY KEY,
         user_id INTEGER REFERENCES public.users(id) ON DELETE CASCADE,
         bio TEXT,
@@ -139,7 +127,7 @@ sql_statements = [
         updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
     )""",
     
-    """CREATE TABLE public.password_reset_tokens (
+    """CREATE TABLE IF NOT EXISTS public.password_reset_tokens (
         id SERIAL PRIMARY KEY,
         user_id INTEGER REFERENCES public.users(id) ON DELETE CASCADE,
         token VARCHAR(255) NOT NULL,
@@ -148,7 +136,7 @@ sql_statements = [
         used BOOLEAN DEFAULT FALSE
     )""",
     
-    """CREATE TABLE public.mail_templates (
+    """CREATE TABLE IF NOT EXISTS public.mail_templates (
         id SERIAL PRIMARY KEY,
         name VARCHAR(100) NOT NULL UNIQUE,
         subject VARCHAR(255) NOT NULL,
@@ -158,7 +146,7 @@ sql_statements = [
         updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
     )""",
     
-    """CREATE TABLE public.pending_mails (
+    """CREATE TABLE IF NOT EXISTS public.pending_mails (
         id SERIAL PRIMARY KEY,
         template_id INTEGER REFERENCES public.mail_templates(id),
         recipient_email VARCHAR(255) NOT NULL,
@@ -173,7 +161,7 @@ sql_statements = [
         CONSTRAINT valid_status CHECK (status IN ('pending', 'processing', 'sent', 'failed'))
     )""",
     
-    """CREATE TABLE public.mail_logs (
+    """CREATE TABLE IF NOT EXISTS public.mail_logs (
         id SERIAL PRIMARY KEY,
         pending_mail_id INTEGER REFERENCES public.pending_mails(id),
         status VARCHAR(50) NOT NULL,
@@ -182,23 +170,35 @@ sql_statements = [
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
     )""",
     
-    # Insert initial data
-    """INSERT INTO public.roles (name, description) VALUES
+    # Insert initial data if not exists
+    """INSERT INTO public.roles (name, description)
+    VALUES 
         ('admin', 'Administrator with full system access'),
-        ('student', 'Regular student user')""",
+        ('student', 'Regular student user')
+    ON CONFLICT (name) DO NOTHING""",
     
-    """WITH new_user AS (
-        INSERT INTO public.users (name, surname, email, password, is_active, user_type)
-        VALUES ('Admin', 'User', 'admin@erasmustalk.com', 'admin123', true, 'admin')
-        RETURNING id
-    )
-    INSERT INTO public.admins (user_id, admin_level)
-    SELECT id, 1 FROM new_user""",
+    """INSERT INTO public.users (name, surname, email, password, is_active, user_type)
+    SELECT 'Admin', 'User', 'admin@erasmustalk.com', crypt('admin123', gen_salt('bf')), true, 'admin'
+    WHERE NOT EXISTS (
+        SELECT 1 FROM public.users WHERE email = 'admin@erasmustalk.com'
+    )""",
+    
+    """INSERT INTO public.admins (user_id, admin_level)
+    SELECT u.id, 1
+    FROM public.users u
+    WHERE u.email = 'admin@erasmustalk.com'
+    AND NOT EXISTS (
+        SELECT 1 FROM public.admins WHERE user_id = u.id
+    )""",
     
     """INSERT INTO public.user_roles (user_id, role_id)
     SELECT u.id, r.id
     FROM public.users u, public.roles r
-    WHERE u.email = 'admin@erasmustalk.com' AND r.name = 'admin'""",
+    WHERE u.email = 'admin@erasmustalk.com' AND r.name = 'admin'
+    AND NOT EXISTS (
+        SELECT 1 FROM public.user_roles ur
+        WHERE ur.user_id = u.id AND ur.role_id = r.id
+    )""",
     
     """CREATE OR REPLACE VIEW public.all_users AS
         SELECT

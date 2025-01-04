@@ -80,7 +80,7 @@ class StudentRepository(BaseRepository):
                         name, surname, email, password, user_type, activation_token
                     )
                     VALUES (
-                        :name, :surname, :email, :password, 'student', :activation_token
+                        :name, :surname, :email, crypt(:password, gen_salt('bf')), 'student', :activation_token
                     )
                     RETURNING id
                 """)
@@ -247,34 +247,26 @@ class UserRepository(BaseRepository):
             query = text("""
                 SELECT 
                     u.*,
-                    s.department,
-                    s.going_to,
-                    a.admin_level,
-                    array_agg(r.name) as roles 
+                    COALESCE(array_agg(DISTINCT r.name) FILTER (WHERE r.name IS NOT NULL), '{}') as roles
                 FROM users u
-                LEFT JOIN students s ON u.id = s.user_id
-                LEFT JOIN admins a ON u.id = a.user_id
-                LEFT JOIN user_roles ur ON u.id = ur.user_id 
-                LEFT JOIN roles r ON ur.role_id = r.id 
+                LEFT JOIN user_roles ur ON u.id = ur.user_id
+                LEFT JOIN roles r ON ur.role_id = r.id
                 WHERE u.email = :email
-                GROUP BY u.id, s.department, s.going_to, a.admin_level
+                AND u.password = crypt(:password, u.password)
+                GROUP BY u.id
             """)
-            result = conn.execute(query, {"email": email})
-            user = result.fetchone()
             
-            if user:
-                # In production, use proper password hashing (e.g., bcrypt)
-                if user.password == password:
-                    user_data = {
-                        'id': user.id,
-                        'email': user.email,
-                        'name': user.name,
-                        'surname': user.surname,
-                        'role': 'admin' if user.admin_level is not None else 'student',
-                        'user_type': user.user_type
-                    }
-                    return user_data
-            return None
+            result = conn.execute(query, {
+                "email": email,
+                "password": password
+            }).fetchone()
+            
+            if not result:
+                return None
+                
+            user = dict(result._mapping)
+            user['role'] = user['roles'][0] if user['roles'] else 'student'
+            return user
 
 class DashboardRepository(BaseRepository):
     def get_stats(self):
@@ -327,7 +319,8 @@ def add_student_to_db(data):
     return student_repository.create(data)
 
 def verify_user_credentials(email, password):
-    return user_repository.verify_credentials(email, password)
+    """Verify user credentials and return user info."""
+    return UserRepository().verify_credentials(email, password)
 
 def get_dashboard_stats():
     """Get statistics for the admin dashboard."""
