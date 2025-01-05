@@ -3,6 +3,7 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+
 # C extensions
 *.so
 
@@ -117,3 +118,27 @@ dmypy.json
 
 # pytype static type analyzer
 .pytype/
+
+# Virtual Environment
+venv/
+ENV/
+env/
+.env
+
+# Environment Files
+.env*
+.env.development
+.env.production
+.env.test
+.env.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Logs
+*.log
+logs/
