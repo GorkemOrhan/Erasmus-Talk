@@ -1,14 +1,9 @@
-import os
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_jwt_extended import JWTManager
 from flask_cors import CORS
 from config.base import BaseConfig
-from dotenv import load_dotenv
-
-# Load environment variables
-load_dotenv('.env.development')
 
 # Initialize extensions
 db = SQLAlchemy()
@@ -19,14 +14,11 @@ cors = CORS()
 def create_app(config_object=BaseConfig):
     """Create Flask application."""
     app = Flask(__name__, 
-                static_folder='../../static',
-                template_folder='../../templates')
+                static_folder='../static',
+                template_folder='../templates')
     
     # Configure app
     app.config.from_object(config_object)
-    
-    # Ensure database URI is set
-    app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DB_CONNECTION_STR')
     
     # Initialize extensions
     db.init_app(app)
@@ -45,4 +37,4 @@ def create_app(config_object=BaseConfig):
         # Create database tables
         db.create_all()
         
-        return app
+        return app 
