@@ -1,9 +1,11 @@
 import os
+from datetime import datetime
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_jwt_extended import JWTManager
 from flask_cors import CORS
+from flask_login import LoginManager
 from config.base import BaseConfig
 from dotenv import load_dotenv
 
@@ -15,6 +17,7 @@ db = SQLAlchemy()
 migrate = Migrate()
 jwt = JWTManager()
 cors = CORS()
+login_manager = LoginManager()
 
 def create_app(config_object=BaseConfig):
     """Create Flask application."""
@@ -33,6 +36,23 @@ def create_app(config_object=BaseConfig):
     migrate.init_app(app, db)
     jwt.init_app(app)
     cors.init_app(app)
+    login_manager.init_app(app)
+    
+    # Configure login manager
+    login_manager.login_view = 'auth_web.login'
+    login_manager.login_message_category = 'info'
+    
+    @login_manager.user_loader
+    def load_user(user_id):
+        from features.authentication.domain.models import User
+        return User.query.get(int(user_id))
+    
+    @app.context_processor
+    def utility_processor():
+        return {
+            'now': datetime.utcnow(),
+            'APP_NAME': 'ErasmusTalk'
+        }
     
     with app.app_context():
         # Register blueprints
